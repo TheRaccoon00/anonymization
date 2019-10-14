@@ -34,5 +34,3 @@ __pycache__/
 
 source/
 *.pyc
-
-config.py
