@@ -2,20 +2,7 @@ import pandas as pd
 import time
 from operator import itemgetter
 
-
-data = pd.read_csv("ground_truth.csv", sep=",")
-
-#print(data)
-# nb rows
-nbRows = data.shape[0]
-
-months = ["January","February","March","April","May","June","July","August","September","October","November","December"]
-days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
-l = []
-
-
-
-def displayStatusBar(i):
+def displayStatusBar(i, nbRows, l):
 	treated = int((i/nbRows)*100)
 
 	if i == 0:
@@ -41,7 +28,12 @@ def displayStatusBar(i):
 
 
 
-def statOnUserID():
+def statOnUserID(data, l=None):
+
+	if l == None:
+		l = []
+
+	nbRows = data.shape[0]
 
 	minUserID = data["id_user"][0]
 	maxUserID = data["id_user"][0]
@@ -51,11 +43,11 @@ def statOnUserID():
 	nbLessFrequentUserID = 1
 	avgUserID = data["id_user"][0]
 	userIDFrequency = [[data["id_user"][0],0]]
-	
+
 
 	for i in range(nbRows):
 
-		displayStatusBar(i)
+		displayStatusBar(i, nbRows, l)
 
 
 		currentUserID = data["id_user"][i]
@@ -102,7 +94,12 @@ def statOnUserID():
 
 
 
-def statOnDate():
+def statOnDate(data, l=None):
+
+	if l == None:
+		l = []
+
+	nbRows = data.shape[0]
 
 
 	avgDate = [int(data["date"][0][:4]),int(data["date"][0][5:7]),int(data["date"][0][8:])]
@@ -114,8 +111,8 @@ def statOnDate():
 
 	for i in range(nbRows):
 
-		displayStatusBar(i)
-	
+		displayStatusBar(i, nbRows, l)
+
 
 		currentDate = data["date"][i]
 
@@ -173,14 +170,19 @@ def statOnDate():
 
 
 
-def statOnHours():
+def statOnHours(data, l=None):
+
+	if l == None:
+		l = []
+
+	nbRows = data.shape[0]
 
 	avgTime = [int(data["hours"][0][:2]),int(data["hours"][0][3:])]
 	frequencyByHour = [[data["hours"][0],0]]
 
 	for i in range(nbRows):
 
-		displayStatusBar(i)
+		displayStatusBar(i, nbRows, l)
 
 		currentTime = data["hours"][i]
 
@@ -195,7 +197,7 @@ def statOnHours():
 				isInFrequencyByHour = True
 
 		if not(isInFrequencyByHour):
-			frequencyByHour.append([currentTime,1])	
+			frequencyByHour.append([currentTime,1])
 
 	avgTime[0] = avgTime[0]/nbRows
 	avgTime[1] = avgTime[1]/nbRows
@@ -209,14 +211,19 @@ def statOnHours():
 
 
 
-def statOnItemID():
-	
+def statOnItemID(data, l=None):
+
+	if l == None:
+		l = []
+
+	nbRows = data.shape[0]
+
 	frequencyItemID = [[data["id_item"][0],0]]
 
 
 	for i in range(nbRows):
 
-		displayStatusBar(i)
+		displayStatusBar(i, nbRows, l)
 
 		currentItemID = data["id_item"][i]
 
@@ -237,7 +244,12 @@ def statOnItemID():
 
 
 
-def statOnPrice():
+def statOnPrice(data, l=None):
+
+	if l == None:
+		l = []
+
+	nbRows = data.shape[0]
 
 	minPrice = data["price"][0]
 	maxPrice = data["price"][0]
@@ -247,7 +259,7 @@ def statOnPrice():
 
 	for i in range(nbRows):
 
-		displayStatusBar(i)
+		displayStatusBar(i, nbRows, l)
 
 		currentPrice = data["price"][i]
 
@@ -277,7 +289,12 @@ def statOnPrice():
 
 
 
-def statOnQty():
+def statOnQty(data, l=None):
+
+	if l == None:
+		l = []
+
+	nbRows = data.shape[0]
 
 	minQty = data["qty"][0]
 	maxQty = data["qty"][0]
@@ -287,7 +304,7 @@ def statOnQty():
 
 	for i in range(nbRows):
 
-		displayStatusBar(i)
+		displayStatusBar(i, nbRows, l)
 
 		currentQty = data["qty"][i]
 
@@ -317,12 +334,31 @@ def statOnQty():
 
 
 
-# Fonctions are here !
-"""
-statOnUserID()
-statOnDate()
-statOnHours()
-statOnItemID()
-statOnPrice()
-statOnQty()
-"""
+
+def main():
+	data = pd.read_csv("ground_truth.csv", sep=",")
+
+	months = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+	days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+	l = []
+
+
+	statOnUserID(data)
+	statOnDate(data)
+	statOnHours(data)
+	statOnItemID(data)
+	statOnPrice(data)
+	statOnQty(data)
+
+	# Fonctions are here !
+	"""
+	statOnUserID(data)
+	statOnDate(data)
+	statOnHours(data)
+	statOnItemID(data)
+	statOnPrice(data)
+	statOnQty(data)
+	"""
+
+if __name__ == "__main__":
+    main()
