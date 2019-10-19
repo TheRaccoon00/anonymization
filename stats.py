@@ -338,6 +338,8 @@ def statOnQty(data, l=None):
 def main():
 	data = pd.read_csv("ground_truth.csv", sep=",")
 
+	data = pd.read_csv("/home/theoguidoux/INSA/ws/projetsecu4a/docs/CSV_RENDU/S_Godille_Table_1.csv", sep=",")
+
 	months = ["January","February","March","April","May","June","July","August","September","October","November","December"]
 	days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
 	l = []
