@@ -30,7 +30,7 @@ def pseudo():
     rand_id=random.randint(13000,18000)
     for i in range(0,size):
         df.loc["id_user", i]=trans_table[df["id_user"][i]]
-
+    df.to_csv('submission.csv', encoding='utf-8')
     print(df["id_user"])
 
 if __name__ == "__main__":
