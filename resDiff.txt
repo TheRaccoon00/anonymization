@@ -1,0 +1,14 @@
+ ---------- Differences between the 2 files ---------- 
+
+
+ ---> Section UserID
+
+Diff on avgUserIDFreq = 103.7
+Diff on Q1 userID = 111.11
+Diff on Q2 userID = 102.38
+Diff on Q3 userID = 103.12
+
+
+ ---------- Result diff ---------- 
+
+           --> 105.08 <-- 

@@ -89,6 +89,7 @@ def statOnUserID(data, l=None):
 	print("mostFrequentUserID :",mostFrequentUserID,"frequency :",nbMostFrequentUserID)
 	print("lessFrequentUserID :",lessFrequentUserID,"frequency :",nbLessFrequentUserID)
 	print("avgUserID :",avgUserID)
+	print("userIDFrequency : ",userIDFrequency)
 
 
 
@@ -342,23 +343,16 @@ def main():
 	days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
 	l = []
 
-
+	# Fonctions are here !
 	statOnUserID(data)
+	"""
 	statOnDate(data)
 	statOnHours(data)
 	statOnItemID(data)
 	statOnPrice(data)
-	statOnQty(data)
+	statOnQty(data)"""
 
 	# Fonctions are here !
-	"""
-	statOnUserID(data)
-	statOnDate(data)
-	statOnHours(data)
-	statOnItemID(data)
-	statOnPrice(data)
-	statOnQty(data)
-	"""
 
 if __name__ == "__main__":
     main()
