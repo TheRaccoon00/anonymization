@@ -9,7 +9,7 @@ Description: Database deanonymizer using machine learning DBSCAN
 import numpy as np
 import pandas as pd
 import time
-from sklearn.cluster import DBSCAN
+from sklearn.cluster import DBSCAN, SpectralClustering, AgglomerativeClustering
 from sklearn import metrics
 from sklearn.datasets.samples_generator import make_blobs
 from sklearn.preprocessing import StandardScaler
@@ -37,7 +37,7 @@ def vectorize(X, num_col):
 
 	trans_table_rev = {v: k for k, v in trans_table.items()}
 	return trans_table, trans_table_rev, X
-
+	
 def main():
 	# #############################################################################
 	# Data transformation
@@ -69,9 +69,12 @@ def main():
 
 	# #############################################################################
 	# Compute DBSCAN
-	db = DBSCAN(eps=0.3, min_samples=7).fit(X)
-	core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
-	core_samples_mask[db.core_sample_indices_] = True
+	#AgglomerativeClustering
+	#SpectralClustering
+	db = DBSCAN(eps=0.3, min_samples=12).fit(X) #min_samples = k
+	#db = SpectralClustering(n_clusters=12, assign_labels="discretize").fit(X)#find n_clusters (groups) to find k-anonimity
+	#core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+	#core_samples_mask[db.core_sample_indices_] = True
 	labels = db.labels_
 
 	# Number of clusters in labels, ignoring noise if present.
