@@ -27,10 +27,12 @@ def pseudo():
     for new_id, id in enumerate(id_user_set):
         trans_table[id] = new_id
     print(df["id_user"][0], trans_table[df["id_user"][0]])
-    rand_id=random.randint(13000,18000)
+    dfn = np.asarray(df)
     for i in range(0,size):
-        df.loc["id_user", i]=trans_table[df["id_user"][i]]
-    df.to_csv('submission.csv', encoding='utf-8')
+        dfn[i][0] = trans_table[df["id_user"][i]]
+    df = pd.DataFrame(data=np.asarray(dfn))
+    df.columns = ["id_user", "date", "hours", "id_item","price","qty"]
+    df.to_csv('submission.csv', encoding='utf-8',index=False)
     print(df["id_user"])
 
 if __name__ == "__main__":
