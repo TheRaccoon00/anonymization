@@ -14,7 +14,7 @@ import hashlib
 def main():
     #main
     pseudo('ground_truth.csv')
-    modificateDate('out/stage1.csv')
+    modificateDateV2('out/stage1.csv')
     del_hours('out/stage2.csv')
     #main
 
@@ -53,6 +53,28 @@ def modificateDate(filename):
     df = pd.DataFrame(data=np.asarray(dfn))
     df.columns = ["id_user", "date", "hours", "id_item","price","qty"]
     df.to_csv('out/stage2.csv', encoding='utf-8',index=False)
+
+def modificateDateV2(filename):
+    df =  pd.read_csv(filename,dtype={"id_user":np.float64,"date":np.object,"hours":np.object,"id_item":np.object,"price":np.float,"qty":np.int})
+    size = len(df["date"])
+    listDate = []
+    for i in range(size):
+        listDate.append(df["date"][i])
+
+    dfn = np.asarray(df)
+
+    for i in range(size):
+        if 20 > int(listDate[i][8:]) >= 10:
+            dfn[i][1] = listDate[i][:4] + "/" + listDate[i][5:7] + "/" + "10" # 1 is for date
+        elif int(listDate[i][8:]) >= 20:
+            dfn[i][1] = listDate[i][:4] + "/" + listDate[i][5:7] + "/" + "20" # 1 is for date
+        else:
+            dfn[i][1] = listDate[i][:4] + "/" + listDate[i][5:7] + "/" + "01" # 1 is for date
+
+    df = pd.DataFrame(data=np.asarray(dfn))
+    df.columns = ["id_user", "date", "hours", "id_item","price","qty"]
+    df.to_csv('out/stage2.csv', encoding='utf-8',index=False)
+
 
 def del_hours(filename):
     df =  pd.read_csv(filename,dtype={"id_user":np.float64,"date":np.object,"hours":np.object,"id_item":np.object,"price":np.float,"qty":np.int})
