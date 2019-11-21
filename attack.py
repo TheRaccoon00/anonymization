@@ -17,19 +17,27 @@ import warnings
 from sklearn.exceptions import DataConversionWarning
 warnings.filterwarnings(action='ignore', category=DataConversionWarning)
 
-#change this values in function of what is the function
-use_index = False	#default False
-use_dates = True	#default True
-use_hours = False	#default False
-use_items = True	#default True
-use_scaler = False	#default False
+#change this values in function of what is in anonymized data
+use_index = False			#default False
+use_dates = True			#default True
+use_hours = False			#default False
+use_items = True			#default True
+use_scaler = False			#default False
 
+#change this values to speed up research by reducing space research
+force_year_equality = True #default False
+force_month_equality = True#default False
+force_day_equality = False	#default False
+force_item_equality = True	#default False
+force_qtt_equality = True	#default False
 
 #do not change this values
 id_index = 0
 date_index = 1
 hours_index = 2
 item_index = 3
+price_index = 4
+qtt_index = 5
 
 def vectorize(X, num_col):
 	"""
@@ -104,10 +112,9 @@ def apply_transform(dfn, trans_table, num_col):
 		#if key is not in trans_table
 		if dfn[i][num_col] not in trans_table.keys():
 			#we add new entry to the table
-			new_entries_values = list(set(list(range(0, 2*len(trans_table.keys()))))-set(trans_table.keys()))
+			new_entries_values = list(set(list(range(0, 3*len(trans_table.keys()))))-set(trans_table.values()))
 			new_entry_value = random.choice(new_entries_values)
 			trans_table[dfn[i][num_col]] = new_entry_value
-			#print("adding : ", dfn[i][num_col], new_entry_value)
 
 		#apply transform
 		dfn[i][num_col]=trans_table[dfn[i][num_col]]
@@ -120,25 +127,84 @@ def get_similar(Xgt, Xdt_row, return_length=10):
 	"""
 	return closest rows of dtn from gtn
 	"""
-	#print(cosine_similarity([Xgt[0]], [Xdt_row])[0][0]) #return the similarity of Xgt[0] and Xdt_row => 0.5008987774997233
-	#print(cosine_similarity([Xgt[0]], [Xgt[0]])[0][0]) #return the similarity of Xgt[0] and Xgt[0] => 1.0
-	#get distance to origin euclidean_distances([[0, 1], [1, 1]], [[0, 0]]) => array([[1.], [1.41421356]])
+	############################
+	init_Xgt = Xgt
+	#reduce space search
+	Xgt = Xgt.copy().astype(np.float64) #make a copy before reducing input
+	Xgt_indexes = np.asarray(range(0, Xgt.shape[0]))
+	Xdt_row = Xdt_row.astype(np.float64) #convert to float 64 because Xgt are float64
 
-	#similarities = sorted(enumerate([cosine_similarity([Xgt_row], [Xdt_row])[0][0] for Xgt_row in Xgt]), key = lambda x: int(x[1]))
-	eds = euclidean_distances(Xgt, [Xdt_row])
-	#decrease dimension
-	eds = [ed[0] for ed in eds]
+	if force_year_equality:
+		valid_rows = np.where(Xgt[:, date_index] == Xdt_row[date_index])
+		Xgt = Xgt[valid_rows]
+		Xgt_indexes = Xgt_indexes[valid_rows]
+		del valid_rows
+		#print(Xgt.shape)
 
-	#list of distances from ground_truth vectors to Xdt_row sorted from lower to higher with corresponding index in Xgt
-	distances = sorted(enumerate(eds), key = lambda x: int(x[1]))
-	#print("max distance : ", max([d[1] for d in distances]))
-	#print("min distance : ", min([d[1] for d in distances]))
+	if force_month_equality:
+		valid_rows = np.where(Xgt[:, date_index+1] == Xdt_row[date_index+1])
+		Xgt = Xgt[valid_rows]
+		Xgt_indexes = Xgt_indexes[valid_rows]
+		del valid_rows
+		#print(Xgt.shape)
+
+	if force_day_equality:
+		valid_rows = np.where(Xgt[:, date_index+2] == Xdt_row[date_index+2])
+		Xgt = Xgt[valid_rows]
+		Xgt_indexes = Xgt_indexes[valid_rows]
+		del valid_rows
+		#print(Xgt.shape)
+
+	if force_item_equality:
+		valid_rows = np.where(Xgt[:, item_index] == Xdt_row[item_index])
+		Xgt = Xgt[valid_rows]
+		Xgt_indexes = Xgt_indexes[valid_rows]
+		del valid_rows
+		#print(Xgt.shape)
+
+	if force_qtt_equality:
+		valid_rows = np.where(Xgt[:, qtt_index] == Xdt_row[qtt_index])
+		Xgt = Xgt[valid_rows]
+		Xgt_indexes = Xgt_indexes[valid_rows]
+		del valid_rows
+		#print(Xgt.shape)
+
+	#print("Space search reduced to",Xgt.shape[0],"possibilities")
 
 	similar_rows = []
 	similar_rows_score = []
-	for i in range(0, return_length):
-		similar_rows.append((distances[i][0], Xgt[distances[i][0]]))
-		similar_rows_score.append(distances[i][1])
+
+	if Xgt.shape[0] > 0:
+
+		#print(cosine_similarity([Xgt[0]], [Xdt_row])[0][0]) #return the similarity of Xgt[0] and Xdt_row => 0.5008987774997233
+		#print(cosine_similarity([Xgt[0]], [Xgt[0]])[0][0]) #return the similarity of Xgt[0] and Xgt[0] => 1.0
+		#get distance to origin euclidean_distances([[0, 1], [1, 1]], [[0, 0]]) => array([[1.], [1.41421356]])
+		#similarities = sorted(enumerate([cosine_similarity([Xgt_row], [Xdt_row])[0][0] for Xgt_row in Xgt]), key = lambda x: int(x[1]))
+		eds = euclidean_distances(Xgt, [Xdt_row])
+		#decrease dimension
+		eds = [ed[0] for ed in eds]
+
+		#eds are euclidean_distances from Xgt to Xdt_row
+		#Xgt_indexes are corresponding indexes of each row in init_Xgt
+		#so we stack them and sort them following eds to have best indexes in init_Xgt
+		eds = np.asarray(eds)
+		stacked = np.stack((Xgt_indexes, eds), axis=-1) #[[Xgt_index, score], [Xgt_index, score], [Xgt_index, score], ...]
+
+		#list of distances from ground_truth vectors to Xdt_row sorted from lower to higher with corresponding index in Xgt
+		distances = sorted(stacked.tolist(), key = lambda x: x[1])
+		distances = [(int(d[0]), d[1]) for d in distances]
+		#print("max distance : ", max([d[1] for d in distances]))
+		#print("min distance : ", min([d[1] for d in distances]))
+
+		for i in range(0, return_length):
+			#(Xgt index, Xgt_vect)
+			#euclidian distance / score
+			similar_rows.append((distances[i][0], init_Xgt[distances[i][0]]))
+			similar_rows_score.append(distances[i][1])
+
+		del distances, eds, stacked
+
+	del Xgt, Xgt_indexes
 
 	return np.asarray(similar_rows), similar_rows_score
 
@@ -188,13 +254,12 @@ def split_date(X, date_index):
 	return np.asarray(out)
 
 def main():
-	global id_index, date_index, item_index, hours_index, use_scaler
+	global id_index, date_index, item_index, hours_index, price_index, qtt_index, use_scaler
 
 	############################################################################
 	#read and convert datasets
 	#gt is the ground_truth dataset and dt is the anonymized dataset to crack (dt for data)
 	print("Reading datasets...")
-
 
 	#works for S_Godille_Table_1, S_Godille_Table_2, S_Godille_Table_3
 	gt = pd.read_csv("ground_truth.csv", sep=",")
@@ -215,6 +280,8 @@ def main():
 		date_index = date_index - 1
 		hours_index = hours_index - 1
 		item_index = item_index - 1
+		price_index = price_index - 1
+		qtt_index = qtt_index - 1
 
 	if not use_dates:
 		gtn = np.delete(gtn, date_index, axis=1)
@@ -222,17 +289,23 @@ def main():
 		date_index = date_index - 1
 		hours_index = hours_index - 1
 		item_index = item_index - 1
+		price_index = price_index - 1
+		qtt_index = qtt_index - 1
 
 	if not use_hours:
 		gtn = np.delete(gtn, hours_index, axis=1)
 		dtn = np.delete(dtn, hours_index, axis=1)
 		hours_index = hours_index - 1
 		item_index = item_index - 1
+		price_index = price_index - 1
+		qtt_index = qtt_index - 1
 
 	if not use_items:
 		gtn = np.delete(gtn, item_index, axis=1)
 		dtn = np.delete(dtn, item_index, axis=1)
 		item_index = item_index - 1
+		price_index = price_index - 1
+		qtt_index = qtt_index - 1
 
 	############################################################################
 	#if we use date_index, so we convert XX/XX/XXXX to XX, XX, XX and ad it to final vector
@@ -311,15 +384,13 @@ def main():
 
 	nb_result = 1 			#change this to have more result
 	result = []
-	for i in range(0, 5):	#dtn.shape[0] change the 5 to dtn.shape[0] to run all anonymized data
+	for i in range(0, 5):	#dtn_transformed.shape[0] change the 5 to dtn_transformed.shape[0] to run all anonymized data
 		print("Computing "+str(i+1)+" out of "+str(Xdt.shape[0]), end="\r")
 
-		input_data = dtn_transformed[i]	#the data we want to crack
-		#input_vec is the vectorized version of the data we want to crack based on learnt vectorization
-		input_vec = data_to_vector(input_data, sscaler, trans_table_date_y, trans_table_date_m, trans_table_date_d, trans_table_hours, trans_table_item)
+		input_data = dtn_transformed[i]	#the vectorized data we want to crack
 
 		#sim_vectors and im_scores contains are list of size <nb_result> having closest vectors of input_vec from Xgt
-		sim_vectors, sim_scores = get_similar(Xgt, input_vec, return_length=nb_result)
+		sim_vectors, sim_scores = get_similar(Xgt, input_data, return_length=nb_result)
 		result.append((i, input_data.tolist(), sim_vectors, sim_scores))
 
 	############################################################################
@@ -349,7 +420,4 @@ def main():
 
 
 if __name__ == "__main__":
-	print("################################################")
-	print("## Add similarity rules like quantity exactitude cause qtty may not be anonymized")
-	print("################################################")
 	main()
