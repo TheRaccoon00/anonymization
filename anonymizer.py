@@ -13,10 +13,19 @@ import hashlib
 
 def main():
     #main
-    pseudo('ground_truth.csv')
-    modificateDate('out/stage1.csv')
-    del_hours('out/stage2.csv')
+    #pseudo('ground_truth.csv')
+    #modificateDate('out/stage1.csv')
+    #test('ground_truth.csv')
+    #del_hours('out/stage2.csv')
+    filter('groundbig.csv','ground.csv')
     #main
+
+#def test(filename):
+#    file= open('ground_truth.csv',"r")
+#    listfile = []
+#    for i in range(5):
+#        listfile=file.readline()
+#    print(listfile)
 
 def pseudo(filename):
     #Import CSV file
@@ -53,6 +62,28 @@ def modificateDate(filename):
     df = pd.DataFrame(data=np.asarray(dfn))
     df.columns = ["id_user", "date", "hours", "id_item","price","qty"]
     df.to_csv('out/stage2.csv', encoding='utf-8',index=False)
+
+def filter(filename1,filename2):
+    '''Reads the second file and deletes all the lines it contains in the first file'''
+    file1 = open(filename1,"r")
+    file2 = open(filename2,"r")
+    listfile1 = []
+    listfile1 = file1.readlines()
+    listfile2 = []
+    listfile2 = file2.readlines()
+    for i in range(len(listfile1)):
+        listfile2.append(0)
+    for to_delete in listfile2:
+        for original in listfile1:
+            if to_delete == original:
+                listfile1.remove(original)
+    with open('out/filtered.csv', 'w') as filteredfile:
+        filteredfile.writelines("%s" % tuple for tuple in listfile1)
+
+    file1.close()
+    file2.close()
+
+
 
 def del_hours(filename):
     df =  pd.read_csv(filename,dtype={"id_user":np.float64,"date":np.object,"hours":np.object,"id_item":np.object,"price":np.float,"qty":np.int})
