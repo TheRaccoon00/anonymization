@@ -131,7 +131,7 @@ def get_similar(Xgt, Xdt_row, return_length=10):
 	init_Xgt = Xgt
 	#reduce space search
 	Xgt = Xgt.copy().astype(np.float64) #make a copy before reducing input
-	Xgt_indexes = np.asarray(range(0, Xgt.shape[0]))
+	Xgt_indexes = np.arange(Xgt.shape[0])
 	Xdt_row = Xdt_row.astype(np.float64) #convert to float 64 because Xgt are float64
 
 	if force_year_equality:
@@ -396,6 +396,8 @@ def main():
 	############################################################################
 	#pretty print result
 
+	list_desanonymized = []
+
 	print("\n\n\n")
 	print("Results :")
 	for res in result:
@@ -408,16 +410,21 @@ def main():
 			closest_vec = closest_vecs[i][1]								#closest_Xgt_row
 			score = scores[i]												#close score of closest_vec
 			gt_closest_entry = np.asarray(gt.loc[gt_closest_entry_index])	#the closest row in gt mean not vectorized (the result in clear of the cracked row)
+			list_desanonymized.append(gt_closest_entry)
 			dt_entry = np.asarray(dt.loc[dt_vec_index])						#the row that is cracekd not vectorized
 
 			#closest_entry is the same as gt_closest_entry but gt_closest_entry has the user_id
 			#closest_entry = reverse_vector(closest_vec, sscaler, trans_table_date_y_rev, trans_table_date_m_rev, trans_table_date_d_rev, trans_table_hours_rev, trans_table_item_rev)
-			print("#"*50)
-			print("Closest vector of anonymized row (dtn index = "+str(dt_vec_index)+")", dt_entry, "is", gt_closest_entry, "(gtn index = "+str(gt_closest_entry_index)+")")
-			print("data :", dt_entry, "=>", gt_closest_entry)
+
+			#result is displayed here
+			#print("#"*50)
+			#print("Closest vector of anonymized row (dtn index = "+str(dt_vec_index)+")", dt_entry, "is", gt_closest_entry, "(gtn index = "+str(gt_closest_entry_index)+")")
+			#print("data :", dt_entry, "=>", gt_closest_entry)
 			#print("vectors :", dt_vec, "=>", list(closest_vec))
 			#print("score =", score)
 
+	dt_desanonymized = pd.DataFrame(list_desanonymized, columns=["id_user","date","hours","id_item","price","qty"])
+	dt_desanonymized.to_csv("dt_desanonymized.csv", index=False)
 
 if __name__ == "__main__":
 	main()
