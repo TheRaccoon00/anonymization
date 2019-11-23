@@ -7,10 +7,11 @@ Description: Database anonymizer for DARC competition
 """
 
 import pandas as pd
-import time, random
+import time, random, sys, os
 import numpy as np
 from sklearn.preprocessing import StandardScaler, RobustScaler, MaxAbsScaler
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
+import argparse
 
 #turnn off fucking ugly warnings
 import warnings
@@ -31,6 +32,8 @@ force_day_equality = False	#default False
 force_item_equality = True	#default False
 force_qtt_equality = True	#default False
 
+show_result = False
+
 #do not change this values
 id_index = 0
 date_index = 1
@@ -38,6 +41,10 @@ hours_index = 2
 item_index = 3
 price_index = 4
 qtt_index = 5
+
+gt_path = ""		#ground truth file path
+dt_path = ""		#anonymized file path
+out_path = ""		#output file path
 
 def vectorize(X, num_col):
 	"""
@@ -262,8 +269,8 @@ def main():
 	print("Reading datasets...")
 
 	#works for S_Godille_Table_1, S_Godille_Table_2, S_Godille_Table_3
-	gt = pd.read_csv("ground_truth.csv", sep=",")
-	dt = pd.read_csv("/home/theoguidoux/INSA/ws/projetsecu4a/docs/CSV_RENDU/S_Godille_Table_3.csv", sep=",")
+	gt = pd.read_csv(gt_path, sep=",")
+	dt = pd.read_csv(dt_path, sep=",")
 
 	print("Converting datasets...")
 	gtn = np.asarray(gt)
@@ -384,7 +391,7 @@ def main():
 
 	nb_result = 1 			#change this to have more result
 	result = []
-	for i in range(0, 5):	#dtn_transformed.shape[0] change the 5 to dtn_transformed.shape[0] to run all anonymized data
+	for i in range(0, dtn_transformed.shape[0]):	#dtn_transformed.shape[0] change the 5 to dtn_transformed.shape[0] to run all anonymized data
 		print("Computing "+str(i+1)+" out of "+str(Xdt.shape[0]), end="\r")
 
 		input_data = dtn_transformed[i]	#the vectorized data we want to crack
@@ -417,14 +424,57 @@ def main():
 			#closest_entry = reverse_vector(closest_vec, sscaler, trans_table_date_y_rev, trans_table_date_m_rev, trans_table_date_d_rev, trans_table_hours_rev, trans_table_item_rev)
 
 			#result is displayed here
-			#print("#"*50)
-			#print("Closest vector of anonymized row (dtn index = "+str(dt_vec_index)+")", dt_entry, "is", gt_closest_entry, "(gtn index = "+str(gt_closest_entry_index)+")")
-			#print("data :", dt_entry, "=>", gt_closest_entry)
-			#print("vectors :", dt_vec, "=>", list(closest_vec))
-			#print("score =", score)
+			if show_result:
+				print("#"*50)
+				print("Closest vector of anonymized row (dtn index = "+str(dt_vec_index)+")", dt_entry, "is", gt_closest_entry, "(gtn index = "+str(gt_closest_entry_index)+")")
+				print("data :", dt_entry, "=>", gt_closest_entry)
+				#print("vectors :", dt_vec, "=>", list(closest_vec))
+				#print("score =", score)
 
 	dt_desanonymized = pd.DataFrame(list_desanonymized, columns=["id_user","date","hours","id_item","price","qty"])
-	dt_desanonymized.to_csv("dt_desanonymized.csv", index=False)
+	dt_desanonymized.to_csv(out_path, index=False)
 
 if __name__ == "__main__":
+	parser = argparse.ArgumentParser()
+	parser.add_argument("gt", help="ground_truth csv path", type=str)
+	parser.add_argument("dt", help="anonymized csv path", type=str)
+
+	parser.add_argument("-o", "--out", help="output csv file path", type=str, default="")
+
+	parser.add_argument("-uin", "--use-index", help="use id_user for vectorization", default=False, action="store_true")
+	parser.add_argument("-uda", "--use-dates", help="do not use date for vectorization", default=True, action="store_false")
+	parser.add_argument("-uho", "--use-hours", help="use hour for vectorization", default=False, action="store_true")
+	parser.add_argument("-uit", "--use-items", help="do not use id_item for vectorization", default=True, action="store_false")
+	parser.add_argument("-usc", "--use-scaler", help="use scaler for vectorization", default=False, action="store_true")
+
+	parser.add_argument("-fye", "--force-year-equality", help="force years to be equal when finding closest vectors", default=True, action="store_false")
+	parser.add_argument("-fme", "--force-month-equality", help="force months to be equal when finding closest vectors", default=True, action="store_false")
+	parser.add_argument("-fde", "--force-day-equality", help="do not force days to be equal when finding closest vectors", default=False, action="store_true")
+	parser.add_argument("-fie", "--force-item-equality", help="force items to be equal when finding closest vectors", default=True, action="store_false")
+	parser.add_argument("-fqe", "--force-qtt-equality", help="force qtts to be equal when finding closest vectors", default=True, action="store_false")
+
+	parser.add_argument("-v", "--verbose", help="show more informations", default=False, action="store_true")
+
+	args = parser.parse_args()
+
+	#define mandatory values
+	gt_path = args.gt
+	dt_path = args.dt
+
+	#define optional values
+	out_path = args.out if args.out != "" else os.path.splitext(args.dt)[0]+"_desanonymised.nvm"
+	use_index = args.use_index	#default False
+	use_dates = args.use_dates	#default True
+	use_hours = args.use_hours	#default False
+	use_items = args.use_items	#default True
+	use_scaler = args.use_scaler#default False
+
+	force_year_equality = args.force_year_equality 	#default True
+	force_month_equality = args.force_month_equality	#default True
+	force_day_equality = args.force_day_equality 	#default False
+	force_item_equality = args.force_item_equality 	#default True
+	force_qtt_equality = args.force_qtt_equality 	#default True
+
+	show_result = args.verbose
+
 	main()
