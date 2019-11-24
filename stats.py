@@ -83,7 +83,7 @@ def statOnUserID(data, l=None):
 
 	avgUserID = avgUserID/nbRows
 
-
+	print(len(userIDFrequency))
 	print("minUserID :",minUserID)
 	print("maxUserID :",maxUserID)
 	print("mostFrequentUserID :",mostFrequentUserID,"frequency :",nbMostFrequentUserID)
@@ -238,7 +238,7 @@ def statOnItemID(data, l=None):
 			frequencyItemID.append([currentItemID,1])
 
 	sorted(frequencyItemID,key=itemgetter(1))
-	print("frequencyItemID : ",frequencyItemID)
+	print("frequencyItemID : ",len(frequencyItemID))
 
 
 
