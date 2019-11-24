@@ -175,14 +175,16 @@ def distribute_with_date(filename):
                                 nuplet_str = nuplet_str + element + ","
                             else:
                                 nuplet_str = nuplet_str + element + "\n"
-                        print(nuplet_str.strip())
+                        #print(nuplet_str.strip())
                         count+=1
                         file_list.append(nuplet_str.strip())
                         found = 1
                         break
                     if found == 1:
                         break
+    print(file_list)
     print(count)
+
 
 if __name__ == "__main__":
     main()
