@@ -17,15 +17,8 @@ def main():
     #modificateDate('out/stage1.csv')
     #test('ground_truth.csv')
     #del_hours('out/stage2.csv')
-    filter('groundbig.csv','ground.csv')
+    filter('out/stage3.csv','out/stage4.csv')
     #main
-
-#def test(filename):
-#    file= open('ground_truth.csv',"r")
-#    listfile = []
-#    for i in range(5):
-#        listfile=file.readline()
-#    print(listfile)
 
 def pseudo(filename):
     #Import CSV file
@@ -77,12 +70,11 @@ def filter(filename1,filename2):
         for original in listfile1:
             if to_delete == original:
                 listfile1.remove(original)
-    with open('out/filtered.csv', 'w') as filteredfile:
+    with open('out/stage5.csv', 'w') as filteredfile:
         filteredfile.writelines("%s" % tuple for tuple in listfile1)
 
     file1.close()
     file2.close()
-
 
 
 def del_hours(filename):
