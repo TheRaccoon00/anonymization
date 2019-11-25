@@ -18,21 +18,23 @@ def main():
     pseudo('ground_truth.csv')
     modificateDateV2('out/stage1.csv')
     del_hours('out/stage2.csv')
+
     generate_alone_items('out/stage3.csv')
 
-    for nb_file in range(0,37):
-        filterV2('out/stage4.csv',".alone_items/out"+str(nb_file)+".csv")
+    #for nb_file in range(0,37):
+    #    filterV2('out/stage42.csv',".alone_items2/out"+str(nb_file)+".csv")
 
-    distribute_with_date("out/stage4.csv")
+    distribute_with_date("out/stage3.csv")
 
-
-    generate_alone_users('out/stage5_sort.csv')
+    generate_alone_users('out/stage53.csv')
 
     for nb_file in range(0,37):
         filterV2('out/stage6.csv',".alone_users/out"+str(nb_file)+".csv")
-
-    distribute_with_date('out/stage6.csv')
     """
+    distribute_with_date('out/stage53.csv')
+
+
+    #id_user_id_item("out/stage7_sort.csv")
 
 def pseudo(filename):
     #Import CSV file
@@ -146,14 +148,14 @@ def generate_alone_items(filename):
             date_dict[str(df["date"][i])] = []
         date_dict[str(df["date"][i])].append(dfn[i])
 
-    save_filename = ".alone_items/out"
+    save_filename = ".alone_items2/out"
     nb_file = 0
 
     for date in date_dict:
         out_file = open(save_filename + str(nb_file) +".csv","w")
         for i,id_item in enumerate(date_dict[str(date)]):
             compare = [date_dict[str(date)][i][3] for i in range(0, len(date_dict[str(date)]))]
-            if compare.count(id_item[3]) <= 1:
+            if compare.count(id_item[3]) <= 3:
                 if date not in final_dict:
                     final_dict[str(date)] = []
                 final_dict[str(date)].append(id_item)
@@ -166,7 +168,7 @@ def generate_alone_items(filename):
         out_file.close()
         nb_file += 1
         print(str(date) + ": " + str(len(final_dict[str(date)])))
-
+    """
     files = list()
     files_list = list()
 
@@ -190,6 +192,8 @@ def generate_alone_items(filename):
                 alone_items.append(nuplet)
 
     print(len(alone_items))
+    """
+    print("end")
 
 def distribute_with_date(filename):
 
@@ -200,60 +204,72 @@ def distribute_with_date(filename):
 
     for line in file:
         file_list.append(line.split(","))
-    print(len(file_list))
 
     files = list()
     files_list = list()
 
     for nb_file in range(0,37):
-        files.append(open(".alone_items/out"+str(nb_file)+".csv","r"))
+        files.append(open(".alone_users/out"+str(nb_file)+".csv","r"))
 
     for index,file in enumerate(files):
         files_list.append(list())
         for line in file:
             files_list[index].append(line)
+
     count = 0
     found = 0
+
     for file in files_list:
+        print("file")
         for indexfile, nuplet in enumerate(file):
             found = 0
-            for file_compare in files_list:
-                for nup in file_compare:
-                    #print(nuplet.split(","))
-                    if nuplet.split(",")[3] in nup.split(","):
-                        file.pop(indexfile)
-                        new_nuplet = nuplet.split(",")
-                        nuplet_str = ""
-                        for index,element in enumerate(new_nuplet):
-                            if index == 1:
-                                element = file_compare[0].split(",")[1]
-                            if index != 5:
-                                nuplet_str = nuplet_str + element + ","
-                            else:
-                                nuplet_str = nuplet_str + element + "\n"
-                        #print(nuplet_str.strip())
-                        count+=1
-                        distribute_list_str.append(nuplet_str.strip())
-                        found = 1
-                        break
-                    if found == 1:
-                        break
+            for index_modif,line_compare in enumerate(file_list):
+                if nuplet.split(",") == line_compare:
+                #if nuplet.split(",")[3] in nup.split(","):
+                    list_modif = file_list[index_modif]
+                    file_list[index_modif] = ["DEL"]
+                    """
+                    for index,element in enumerate(list_modif):
+                        if index == 1:
+                            file_list[index_modif].append("DEL")
+                        else:
+                            file_list[index_modif].append(element)
+                    """
+                    break
 
+                    """
+                    new_nuplet = nuplet.split(",")
+                    nuplet_str = ""
+                    for index,element in enumerate(new_nuplet):
+                        if index == 1:
+                            element = file_compare[0].split(",")[1]
+                        if index != 5:
+                            nuplet_str = nuplet_str + element + ","
+                        else:
+                            nuplet_str = nuplet_str + element + "\n"
+                    #print(nuplet_str.strip())
+                    count+=1
+                    distribute_list_str.append(nuplet_str.strip())
+                    """
+
+    print("completing")
+
+    """
     ##COMPLETE WITH FAKE LINES
     for line in distribute_list_str:
         distribute_list.append(line.split(","))
-    print(distribute_list)
 
     line_number = 0
     max_number = len(distribute_list)
     while len(file_list) < 307055:
         file_list.append(distribute_list[line_number % max_number])
         line_number+=1
+    """
 
-    file_out = open("out/stage5.csv","w")
+    file_out = open("out/stage63.csv","w")
     for line in file_list:
         for index,element in enumerate(line):
-            if index != 5:
+            if index != 5 and len(line) > 1:
                 file_out.write(element + ",")
             else:
                 file_out.write(element.strip() + "\n")
@@ -316,7 +332,7 @@ def generate_alone_users(filename):
 
     print(len(alone_items))
 
-def distribute_with_date(filename):
+def distribute_with_date_item(filename):
 
     file = open(filename,"r")
     file_list = []
@@ -382,6 +398,30 @@ def distribute_with_date(filename):
                 file_out.write(element.strip() + "\n")
 
     file_out.close()
+
+def id_user_id_item(filename):
+    file = open(filename,"r")
+    file_list = []
+    repetitions = []
+
+    for line in file:
+        file_list.append(line.split(","))
+
+    id_user_dict = {}
+    final_dict= {}
+
+    for line in file_list:
+        if line[0] not in id_user_dict:
+            id_user_dict[str(line[0])] = []
+        id_user_dict[str(line[0])].append(line)
+
+    for key in id_user_dict:
+        repetitions.append((len(id_user_dict[key]),key))
+    repetitions.sort()
+
+    for rep in repetitions:
+        print(rep)
+    print(len(repetitions))
 
 if __name__ == "__main__":
     main()
