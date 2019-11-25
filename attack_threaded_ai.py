@@ -6,6 +6,12 @@ Github: https://github.com/TheRaccoon00/anonymization
 Description: Database anonymizer for DARC competition
 """
 
+import warnings
+warnings.filterwarnings("ignore",category=FutureWarning)
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
+import tensorflow as tf
+
 import pandas as pd
 import time, random, sys, os, argparse
 import numpy as np
@@ -18,20 +24,8 @@ import warnings
 from sklearn.exceptions import DataConversionWarning
 warnings.filterwarnings(action='ignore', category=DataConversionWarning)
 
-from keras_preprocessing.text import Tokenizer, tokenizer_from_json
-from sklearn.feature_extraction.text import TfidfVectorizer
-from keras.preprocessing import sequence
-from keras.layers.core import Layer, Dense, Activation, Dropout
-from keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
-from keras.layers.embeddings import Embedding
-from keras.layers.normalization import BatchNormalization
-from keras.layers.recurrent import LSTM
-from keras.layers import Input, Flatten, GlobalMaxPooling1D, GlobalAveragePooling1D, MaxPooling1D, GlobalMaxPool2D, Conv1D, Bidirectional, GRU, concatenate, merge
-from keras.models import Sequential, model_from_json, load_model
-from keras import optimizers, Model
-from keras import backend as K
-from keras import regularizers
 from encoder import load_autoencoder
+from desanotools import *
 
 #change this values in function of what is in anonymized data
 use_index = False			#default False
@@ -62,242 +56,24 @@ qtt_index = 5
 gt_path = ""		#ground truth file path
 dt_path = ""		#anonymized file path
 out_path = ""		#output file path
+conf_file_path = ""
 
 encoder_model = load_autoencoder("encoder.h5")
 
-def vectorize(X, num_col):
-	"""
-	Create a table wich translate an item to a unique id
-	Return the translate table, inverse of the translate table and translated data
-	Example :
-	Input :
-	=> X = [["AA", "AB", ... ], [ ...],  [ ...]]; num_col = 0;
 
-	Output :
-	=> trans_table = { "AA": 0, "BB": 1, ...}
-	=> trans_table_rev = { 0: "AA", 1: "AB", ...}
-	=> X = [[0, 1, ... ], [ ...],  [ ...]]
-	"""
-	item_ids_set = set(X[:,num_col])
-	trans_table = dict()
-	for new_id, id in enumerate(item_ids_set):
-		trans_table[id] = new_id
-	for i in range(0, X[:,num_col].shape[0]):
-		#print(df["id_item"][i])
-		X[i][num_col]=trans_table[X[i][num_col]]
-
-	trans_table_rev = {v: k for k, v in trans_table.items()}
-	return trans_table, trans_table_rev, X
-
-def learn_panda_to_vector(df, scaler):
-	X = np.asarray(df)
-
-	trans_table_date_y = dict()
-	trans_table_date_y_rev = dict()
-	trans_table_date_m = dict()
-	trans_table_date_m_rev = dict()
-	trans_table_date_d = dict()
-	trans_table_date_d_rev = dict()
-	trans_table_hours = dict()
-	trans_table_hours_rev = dict()
-	trans_table_item = dict()
-	trans_table_item_rev = dict()
-
-	#apply vectorization
-	if use_dates:
-		print("Transforming date")
-		trans_table_date_y, trans_table_date_y_rev, X = vectorize(X, date_index)
-		trans_table_date_m, trans_table_date_m_rev, X = vectorize(X, date_index+1)
-		trans_table_date_d, trans_table_date_d_rev, X = vectorize(X, date_index+2)
-
-
-	if use_hours:
-		print("Transforming hours")
-		trans_table_hours, trans_table_hours_rev, X = vectorize(X, hours_index)
-
-	if use_items:
-		print("Transforming id_item")
-		trans_table_item, trans_table_item_rev, X = vectorize(X, item_index)
-
-	#print(X[0]) => [17850 0 10 241 2.55 6]
-
-	#apply scaler to input
-	if use_scaler:
-		X = scaler.fit_transform(X)
-	return 	trans_table_date_y, trans_table_date_y_rev,\
-			trans_table_date_m, trans_table_date_m_rev,\
-			trans_table_date_d, trans_table_date_d_rev,\
-			trans_table_hours, trans_table_hours_rev, trans_table_item, trans_table_item_rev, X
-
-def apply_transform(dfn, trans_table, num_col):
-	"""
-	apply learnt vectorization and return trans_table (and reversed version)
-	in case of we had to add new entries to trans_table
-	"""
-	for i in range(0, dfn[:,num_col].shape[0]):
-		#if key is not in trans_table
-		if dfn[i][num_col] not in trans_table.keys():
-			#we add new entry to the table
-			new_entries_values = list(set(list(range(0, 3*len(trans_table.keys()))))-set(trans_table.values()))
-			new_entry_value = random.choice(new_entries_values)
-			trans_table[dfn[i][num_col]] = new_entry_value
-
-		#apply transform
-		dfn[i][num_col]=trans_table[dfn[i][num_col]]
-
-	#get reversible table
-	trans_table_rev = {v: k for k, v in trans_table.items()}
-	return dfn, trans_table, trans_table_rev
-
-def get_similar(Xgt, Xdt_row, return_length=10):
-	"""
-	return closest rows of dtn from gtn
-	"""
-	############################
-	init_Xgt = Xgt
-	#reduce space search
-	Xgt = Xgt.copy().astype(np.float64) #make a copy before reducing input
-	Xgt_indexes = np.arange(Xgt.shape[0])
-	Xdt_row = Xdt_row.astype(np.float64) #convert to float 64 because Xgt are float64
-
-	if force_year_equality:
-		valid_rows = np.where(Xgt[:, date_index] == Xdt_row[date_index])
-		Xgt = Xgt[valid_rows]
-		Xgt_indexes = Xgt_indexes[valid_rows]
-		del valid_rows
-		#print(Xgt.shape)
-
-	if force_month_equality:
-		valid_rows = np.where(Xgt[:, date_index+1] == Xdt_row[date_index+1])
-		Xgt = Xgt[valid_rows]
-		Xgt_indexes = Xgt_indexes[valid_rows]
-		del valid_rows
-		#print(Xgt.shape)
-
-	if force_day_equality:
-		valid_rows = np.where(Xgt[:, date_index+2] == Xdt_row[date_index+2])
-		Xgt = Xgt[valid_rows]
-		Xgt_indexes = Xgt_indexes[valid_rows]
-		del valid_rows
-		#print(Xgt.shape)
-
-	if force_item_equality:
-		valid_rows = np.where(Xgt[:, item_index] == Xdt_row[item_index])
-		Xgt = Xgt[valid_rows]
-		Xgt_indexes = Xgt_indexes[valid_rows]
-		del valid_rows
-		#print(Xgt.shape)
-
-	if force_qtt_equality:
-		valid_rows = np.where(Xgt[:, qtt_index] == Xdt_row[qtt_index])
-		Xgt = Xgt[valid_rows]
-		Xgt_indexes = Xgt_indexes[valid_rows]
-		del valid_rows
-		#print(Xgt.shape)
-
-	#print("Space search reduced to",Xgt.shape[0],"possibilities")
-
-	similar_rows = []
-	similar_rows_score = []
-
-	if Xgt.shape[0] > 0:
-
-		#print(cosine_similarity([Xgt[0]], [Xdt_row])[0][0]) #return the similarity of Xgt[0] and Xdt_row => 0.5008987774997233
-		#print(cosine_similarity([Xgt[0]], [Xgt[0]])[0][0]) #return the similarity of Xgt[0] and Xgt[0] => 1.0
-		#get distance to origin euclidean_distances([[0, 1], [1, 1]], [[0, 0]]) => array([[1.], [1.41421356]])
-		#similarities = sorted(enumerate([cosine_similarity([Xgt_row], [Xdt_row])[0][0] for Xgt_row in Xgt]), key = lambda x: int(x[1]))
-		Xdt_row = np.asarray([Xdt_row])
-		#print(Xgt[0])
-		#print(Xdt_row[0])
-		Xgt_encoded = encoder_model.predict(Xgt)
-		Xdt_row_encoded = encoder_model.predict(Xdt_row)
-		eds = euclidean_distances(Xgt_encoded, Xdt_row_encoded)
-		#decrease dimension
-		eds = [ed[0] for ed in eds]
-
-		#eds are euclidean_distances from Xgt to Xdt_row
-		#Xgt_indexes are corresponding indexes of each row in init_Xgt
-		#so we stack them and sort them following eds to have best indexes in init_Xgt
-		eds = np.asarray(eds)
-		stacked = np.stack((Xgt_indexes, eds), axis=-1) #[[Xgt_index, score], [Xgt_index, score], [Xgt_index, score], ...]
-
-		#list of distances from ground_truth vectors to Xdt_row sorted from lower to higher with corresponding index in Xgt
-		distances = sorted(stacked.tolist(), key = lambda x: x[1])
-		distances = [(int(d[0]), d[1]) for d in distances]
-		#print("max distance : ", max([d[1] for d in distances]))
-		#print("min distance : ", min([d[1] for d in distances]))
-
-		for i in range(0, return_length):
-			#(Xgt index, Xgt_vect)
-			#euclidian distance / score
-			similar_rows.append((distances[i][0], init_Xgt[distances[i][0]]))
-			similar_rows_score.append(distances[i][1])
-
-		del distances, eds, stacked
-
-	del Xgt, Xgt_indexes
-
-	return np.asarray(similar_rows), similar_rows_score
-
-def data_to_vector(data, scaler, trans_table_date_y, trans_table_date_m, trans_table_date_d, trans_table_hours, trans_table_item):
-	dtn = np.asarray([data])
-	if use_dates:
-		dtn, _, _ = apply_transform(dtn, trans_table_date_y, date_index)
-		dtn, _, _ = apply_transform(dtn, trans_table_date_m, date_index+1)
-		dtn, _, _ = apply_transform(dtn, trans_table_date_d, date_index+2)
-
-	if use_hours:
-		dtn, _, _ = apply_transform(dtn, trans_table_hours, hours_index)
-
-	if use_index:
-		dtn, _, _ = apply_transform(dtn, trans_table_item, item_index)
-
-	transformed = dtn
-	if use_scaler:
-		transformed = scaler.transform(dtn)
-	return transformed[0]
-
-def reverse_vector(vec, scaler, trans_table_date_y_rev, trans_table_date_m_rev, trans_table_date_d_rev, trans_table_hours_rev, trans_table_item_rev):
-	if use_scaler:
-		unscaled_vec = list(scaler.inverse_transform([vec])[0])
-	else:
-		unscaled_vec = vec
-	if use_dates:
-		unscaled_vec[date_index] = trans_table_date_y_rev[int(unscaled_vec[date_index])]
-		unscaled_vec[date_index+1] = trans_table_date_m_rev[int(unscaled_vec[date_index+1])]
-		unscaled_vec[date_index+2] = trans_table_date_d_rev[int(unscaled_vec[date_index+2])]
-
-	if use_hours:
-		unscaled_vec[hours_index] = trans_table_hours_rev[int(unscaled_vec[hours_index])]
-	if use_items:
-		unscaled_vec[item_index] = trans_table_item_rev[int(unscaled_vec[item_index])]
-
-	return unscaled_vec
-
-def split_date(X, date_index):
-	out = []
-	for i in range(0, X.shape[0]):
-		y, m, d = X[i][date_index].split("/")
-		y, m, d = int(y), int(m), int(d)
-		x_i = list(X[i])
-		x_i[date_index:date_index+1] = [y, m, d]
-		out.append(x_i)
-	return np.asarray(out)
-
-def hack(Xgt, dtn_transformed_part, nb_result, result, index):
+def hack(conf, Xgt, dtn_transformed_part, nb_result, result, index):
 	part_result = []
 	for i in range(0, dtn_transformed_part.shape[0]):	#dtn_transformed.shape[0] change the 5 to dtn_transformed.shape[0] to run all anonymized data
 		print("\t"*(3*index)+"[Thread"+str(index)+"]"+str(i+1)+"/"+str(dtn_transformed_part.shape[0]), end="\r")
 		input_data = dtn_transformed_part[i]	#the vectorized data we want to crack
 
 		#sim_vectors and sim_scores are list of size <nb_result> having closest vectors of input_data from Xgt
-		sim_vectors, sim_scores = get_similar(Xgt, input_data, return_length=nb_result)
+		sim_vectors, sim_scores = get_similar(Xgt, input_data, conf, encoder_model, return_length=nb_result)
 		part_result.append((i, input_data.tolist(), sim_vectors, sim_scores))
 	result[index] = part_result
 
 def main():
 	global id_index, date_index, item_index, hours_index, price_index, qtt_index, use_scaler, nb_threads
-
 	############################################################################
 	#read and convert datasets
 	#gt is the ground_truth dataset and dt is the anonymized dataset to crack (dt for data)
@@ -357,6 +133,9 @@ def main():
 		dtn = split_date(dtn, date_index)
 		item_index = item_index + 2 #deleted 1 item, added 3 so add 2 to item_index
 
+	conf = compact_conf(use_index, use_dates, use_hours, use_items, use_scaler, force_year_equality, force_month_equality, force_day_equality, force_item_equality, force_qtt_equality, nb_threads, show_result, id_index, date_index, hours_index, item_index, price_index, qtt_index, gt_path, dt_path, out_path)
+	save_conf(conf, conf_file_path)
+
 	############################################################################
 	#vectorization of data
 
@@ -369,16 +148,13 @@ def main():
 	#learnt vectorization is stored in dict and dict_rev for the reversible transformation
 	#learn how to convert str items to int/float items and store it in tables for date/hour/item
 	print("Learning transformation from ground_truth...")
-	print("gtn", gtn[0])
-	print(id_index, date_index, hours_index, item_index, price_index, qtt_index)
 	trans_table_date_y, trans_table_date_y_rev,\
 	trans_table_date_m,trans_table_date_m_rev,\
 	trans_table_date_d, trans_table_date_d_rev,\
 	trans_table_hours, trans_table_hours_rev,\
 	trans_table_item, trans_table_item_rev,\
-	Xgt = learn_panda_to_vector(gtn.copy(), sscaler)
-	print(Xgt[0])
-	print(trans_table_date_y)
+	Xgt = learn_panda_to_vector(gtn.copy(), sscaler, conf)
+
 	#############################
 	#step 2 : apply transformations on anonymized data so that
 	#with this transformations ground_truth and anonymized data can be compared
@@ -406,10 +182,6 @@ def main():
 
 	Xgt = np.asarray(Xgt, dtype=np.float64)
 	Xdt	 = np.asarray(Xdt, dtype=np.float64)
-	print(Xgt[0])
-	#exit()
-	#Xgt = encoder_model.predict(Xgt)
-	#Xdt = encoder_model.predict(Xdt)
 
 	############################################################################
 	#just to make things clear
@@ -449,7 +221,7 @@ def main():
 		data_part = dtn_transformed[i*delta_data_threads:(i+1)*delta_data_threads]
 		if i == nb_threads-1:#last thread
 			data_part = dtn_transformed[i*delta_data_threads:(i+1)*delta_data_threads+last_threads_delta_plus]
-		threads[i] = Thread(target=hack, args=(Xgt, data_part, nb_result, threads_results, i))
+		threads[i] = Thread(target=hack, args=(conf, Xgt, data_part, nb_result, threads_results, i))
 		threads[i].start()
 		#print("Thread", i, "started")
 
@@ -501,7 +273,10 @@ def main():
 
 	dt_desanonymized = pd.DataFrame(list_desanonymized, columns=["id_user","date","hours","id_item","price","qty"])
 	dt_desanonymized.to_csv(out_path, index=False)
+	save_conf(conf, conf_file_path)
 	print("Result written in", out_path)
+	print("Conf save in ", conf_file_path)
+
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
@@ -532,8 +307,10 @@ if __name__ == "__main__":
 	gt_path = args.gt
 	dt_path = args.dt
 
+	conf_file_path = "desanoconf/conf.json"
+
 	#define optional values
-	out_path = args.out if args.out != "" else os.path.splitext(args.dt)[0]+"_desanonymised.nvm"
+	out_path = args.out if args.out != "" else os.path.splitext(args.dt)[0]+"_desanonymised.csv"
 	use_index = args.use_index						#default False
 	use_dates = args.use_dates						#default True
 	use_hours = args.use_hours						#default False

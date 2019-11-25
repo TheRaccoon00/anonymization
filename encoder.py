@@ -36,6 +36,7 @@ from keras.models import Sequential, model_from_json, load_model
 from keras import optimizers, Model
 from keras import backend as K
 from keras import regularizers
+from desanotools import *
 
 #change this values in function of what is in anonymized data
 use_index = False			#default False
@@ -89,7 +90,11 @@ class AutoEncoderLoader(object):
 
 def main():
 	global id_index, date_index, item_index, hours_index, price_index, qtt_index, use_scaler
-
+	conf = load_conf("desanoconf/conf.json")
+	use_index, use_dates, use_hours, use_items, use_scaler, force_year_equality,\
+	force_month_equality, force_day_equality, force_item_equality,\
+	force_qtt_equality, nb_threads, show_result, _, _,\
+	_, _, _, _, gt_path, dt_path, out_path = uncompact_conf(conf)
 	############################################################################
 	#read and convert datasets
 	#gt is the ground_truth dataset and dt is the anonymized dataset to crack (dt for data)
@@ -97,9 +102,11 @@ def main():
 
 	#works for S_Godille_Table_1, S_Godille_Table_2, S_Godille_Table_3
 	gt = pd.read_csv(gt_path, sep=",")
+	dt = pd.read_csv(dt_path, sep=",")
 
 	print("Converting datasets...")
 	gtn = np.asarray(gt)
+	dtn = np.asarray(dt)
 	#[17850 '2010/12/01' '08:26' '85123A' 2.55 6]
 
 	############################################################################
@@ -107,6 +114,7 @@ def main():
 	print("Deleting useless columns...")
 	if not use_index:
 		gtn = np.delete(gtn, id_index, axis=1)
+		dtn = np.delete(dtn, id_index, axis=1)
 		id_index = id_index - 1
 		date_index = date_index - 1
 		hours_index = hours_index - 1
@@ -116,6 +124,7 @@ def main():
 
 	if not use_dates:
 		gtn = np.delete(gtn, date_index, axis=1)
+		dtn = np.delete(dtn, date_index, axis=1)
 		date_index = date_index - 1
 		hours_index = hours_index - 1
 		item_index = item_index - 1
@@ -124,6 +133,7 @@ def main():
 
 	if not use_hours:
 		gtn = np.delete(gtn, hours_index, axis=1)
+		dtn = np.delete(dtn, hours_index, axis=1)
 		hours_index = hours_index - 1
 		item_index = item_index - 1
 		price_index = price_index - 1
@@ -131,6 +141,7 @@ def main():
 
 	if not use_items:
 		gtn = np.delete(gtn, item_index, axis=1)
+		dtn = np.delete(dtn, item_index, axis=1)
 		item_index = item_index - 1
 		price_index = price_index - 1
 		qtt_index = qtt_index - 1
@@ -140,6 +151,7 @@ def main():
 	if use_dates:
 		print("Splitting dates...")
 		gtn = split_date(gtn, date_index)
+		dtn = split_date(dtn, date_index)
 		item_index = item_index + 2 #deleted 1 item, added 3 so add 2 to item_index
 
 	############################################################################
@@ -154,14 +166,12 @@ def main():
 	#learnt vectorization is stored in dict and dict_rev for the reversible transformation
 	#learn how to convert str items to int/float items and store it in tables for date/hour/item
 	print("Learning transformation from ground_truth...")
-	print("gtn", gtn[0])
-	print(id_index, date_index, hours_index, item_index, price_index, qtt_index)
 	#trans_table_date_y, trans_table_date_y_rev,\
 	#trans_table_date_m,trans_table_date_m_rev,\
 	#trans_table_date_d, trans_table_date_d_rev,\
 	#trans_table_hours, trans_table_hours_rev,\
 	#trans_table_item, trans_table_item_rev,\
-	#Xgt = learn_panda_to_vector(gtn.copy(), sscaler)
+	#Xgt = learn_panda_to_vector(gtn.copy(), sscaler, conf)
 
 	X = gtn.copy()
 
@@ -192,7 +202,7 @@ def main():
 		print("Transforming id_item")
 		trans_table_item, trans_table_item_rev, X = vectorize(X, item_index)
 
-	#print(X[0]) => [17850 0 10 241 2.55 6]
+	#print(X[0])#=> [17850 0 10 241 2.55 6]
 
 	#apply scaler to input
 	if use_scaler:
@@ -202,12 +212,12 @@ def main():
 #			trans_table_date_d, trans_table_date_d_rev,\
 #			trans_table_hours, trans_table_hours_rev, trans_table_item, trans_table_item_rev, X
 
-	print(trans_table_date_y)
+	#print(trans_table_date_y)
 	Xgt = X.astype(np.float64)
-	print(Xgt[0])
+	#print(Xgt[0])
 
-	train(Xgt)
-	test(Xgt)
+	#train(Xgt)
+	#test(Xgt)
 
 def get_encoder_model(input_vec_length):
 	model = Sequential()

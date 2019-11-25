@@ -1,0 +1,4 @@
+
+time python3 attack_threaded_ai.py ground_truth.csv ../docs/CSV_RENDU/S_submission_battikh.csv -t 8
+
+python3 script_calcul.py --ground_truth=../ground_truth.csv --submission=../../docs/CSV_RENDU/S_submission_battikh_desanonymised_2.csv --round=1
