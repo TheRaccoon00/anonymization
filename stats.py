@@ -337,18 +337,21 @@ def statOnQty(data, l=None):
 
 def main():
 	data = pd.read_csv("ground_truth.csv", sep=",")
+	data2 = pd.read_csv("/home/clement/Documents/4a/projetSecurite/anonymization/out/stage2.csv", sep=",")
 
 	months = ["January","February","March","April","May","June","July","August","September","October","November","December"]
 	days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
 	l = []
 
 
-	statOnUserID(data)
+	#statOnUserID(data)
 	statOnDate(data)
-	statOnHours(data)
-	statOnItemID(data)
-	statOnPrice(data)
-	statOnQty(data)
+	print("----------------------------")
+	statOnDate(data2)
+	#statOnHours(data)
+	#statOnItemID(data)
+	#statOnPrice(data)
+	#statOnQty(data)
 
 	# Fonctions are here !
 	"""
