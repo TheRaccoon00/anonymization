@@ -271,8 +271,10 @@ def main():
 		else:
 			list_desanonymized.append(np.asarray(["None","None","None","None","None","None"]))
 
-	dt_desanonymized = pd.DataFrame(list_desanonymized, columns=["id_user","date","hours","id_item","price","qty"])
-	dt_desanonymized.to_csv(out_path, index=False)
+	#dt_desanonymized = pd.DataFrame(list_desanonymized, columns=["id_user","date","hours","id_item","price","qty"])
+	#dt_desanonymized.to_csv(out_path, index=False)
+	export_f_file(gtn, dtn, list_desanonymized, out_path)
+
 	save_conf(conf, conf_file_path)
 	print("Result written in", out_path)
 	print("Conf save in ", conf_file_path)
