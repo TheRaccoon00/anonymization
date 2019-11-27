@@ -281,6 +281,11 @@ def main():
 
 
 if __name__ == "__main__":
+	print("#"*100)
+	print("# Faire une recherche par identifiant unique, rechercher toutes les lignes d'un identifiant de la bdd anonymisé, puis par une analyse fréquentielle déterminer l'id le plus probable")
+	print("# Ensuite supprimer toutes les lignes de ground truth qui ont l'id le plus probable pour faire en sorte que l'id ne soit plus choisie")
+	print("#"*100)
+
 	parser = argparse.ArgumentParser()
 	parser.add_argument("gt", help="ground_truth csv path", type=str)
 	parser.add_argument("dt", help="anonymized csv path", type=str)
