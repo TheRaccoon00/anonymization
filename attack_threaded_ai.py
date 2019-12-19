@@ -284,6 +284,7 @@ if __name__ == "__main__":
 	print("#"*100)
 	print("# Faire une recherche par identifiant unique, rechercher toutes les lignes d'un identifiant de la bdd anonymisé, puis par une analyse fréquentielle déterminer l'id le plus probable")
 	print("# Ensuite supprimer toutes les lignes de ground truth qui ont l'id le plus probable pour faire en sorte que l'id ne soit plus choisie")
+	printt("# Verifier que l'encoder prend bien les memes vecteurs pour apprendre")
 	print("#"*100)
 
 	parser = argparse.ArgumentParser()
