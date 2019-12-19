@@ -216,7 +216,7 @@ def main():
 	Xgt = X.astype(np.float64)
 	#print(Xgt[0])
 
-	#train(Xgt)
+	train(Xgt)
 	#test(Xgt)
 
 def get_encoder_model(input_vec_length):
@@ -231,9 +231,10 @@ def get_encoder_model(input_vec_length):
 def get_auto_encoder_model(input_vec_length):
 	input_vec = Input(shape=(input_vec_length,))
 	encoded = Dense(units=8, activation='relu')(input_vec)
-	encoded = Dense(units=3, activation='relu')(encoded)
-	decoded = Dense(units=64, activation='relu')(encoded)
-	decoded = Dense(units=input_vec_length, activation='relu')(decoded)
+	#encoded = Dense(units=8, activation='relu')(input_vec)
+	#encoded = Dense(units=3, activation='relu')(encoded)
+	#decoded = Dense(units=64, activation='relu')(encoded)
+	decoded = Dense(units=input_vec_length, activation='relu')(encoded)
 
 	autoencoder=Model(input_vec, decoded)
 	autoencoder.compile(optimizer='rmsprop', loss='mse', metrics=['accuracy'])
@@ -254,6 +255,7 @@ def train(Xgt):
 	print(Xgt_pred[0])
 	eval = autoencoder_model.evaluate(Xgt[0:100], Xgt[0:100])
 	print(autoencoder_model.metrics_names, eval)
+	#encoder_model.save("encoder.h5")
 
 def test(Xgt):
 	encoder_model = load_model("encoder.h5")
