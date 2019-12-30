@@ -62,16 +62,30 @@ conf_file_path = ""
 encoder_model = load_autoencoder("encoder.h5")
 
 
-def hack(conf, Xgt, dtn_transformed_part, nb_result, result, index):
+def hack(conf, id_user, gt, Xgt, dtn_transformed_part, nb_result):
+	#retourne l'id_user le plus probable de la liste de course dtn_transformed_part
 	part_result = []
 	for i in range(0, dtn_transformed_part.shape[0]):	#dtn_transformed.shape[0] change the 5 to dtn_transformed.shape[0] to run all anonymized data
-		print("\t"*(3*index)+"[Thread"+str(index)+"]"+str(i+1)+"/"+str(dtn_transformed_part.shape[0]), end="\r")
+		#print("\t"*(3*index)+"[Thread"+str(index)+"]"+str(i+1)+"/"+str(dtn_transformed_part.shape[0]), end="\r")
+		print("hacking "+id_user+" => "+str(i+1)+"/"+str(dtn_transformed_part.shape[0])+" | Xgt rows : "+str(Xgt.shape[0]), end="\r")
 		input_data = dtn_transformed_part[i]	#the vectorized data we want to crack
 
 		#sim_vectors and sim_scores are list of size <nb_result> having closest vectors of input_data from Xgt
-		sim_vectors, sim_scores = get_similar(Xgt, input_data, conf, encoder_model, return_length=nb_result)
-		part_result.append((i, input_data.tolist(), sim_vectors, sim_scores))
-	result[index] = part_result
+		sim_vectors, sim_scores = get_similar(gt, Xgt, input_data, conf, encoder_model, return_length=nb_result)
+		#part_result.append((i, input_data.tolist(), sim_vectors, sim_scores))
+		[part_result.append(list(gt.loc[sim_vectors[i][0]])) for i in range(0, len(sim_vectors))]
+
+	id_user_freq = dict()
+	for res in part_result:
+		if id_user_freq.get(str(res[0]), None) == None:
+			id_user_freq[str(res[0])] = 1
+		else:
+			id_user_freq[str(res[0])] += 1
+
+	id_user_freq = {k: v for k, v in sorted(id_user_freq.items(), key=lambda item: item[1], reverse=True)}
+	best_desanonymised_id_user = list(id_user_freq.keys())[0]
+	print("")
+	return best_desanonymised_id_user
 
 def main():
 	global id_index, date_index, item_index, hours_index, price_index, qtt_index, use_scaler, nb_threads
@@ -89,6 +103,12 @@ def main():
 	dtn = np.asarray(dt)
 	#[17850 '2010/12/01' '08:26' '85123A' 2.55 6]
 
+	print("Resolving shopping lists...")
+	shopping_lists = find_shopping_list(dtn, id_index)
+
+	gtn_init = gtn.copy()
+	rows_index_to_delete = []
+	gtn_shopping_lists = find_shopping_list(gtn_init, 0)
 	############################################################################
 	#delete axis in function of what we want to do : check data_index, item_index, hours_index
 	print("Deleting useless columns...")
@@ -223,33 +243,44 @@ def main():
 
 
 	nb_result = 1 			#change this to have more result, default 1
-	result = []				#final main result handler
+	result = dict()			#final main result handler
 
-	threads = [None] * nb_threads			#handlers for running threads
-	threads_results = [None] * nb_threads	#handlers for threads results
+	#threads = [None] * nb_threads			#handlers for running threads
+	#threads_results = [None] * nb_threads	#handlers for threads results
 	#dtn_transformed cut from 0 to delta_data_threads then delta_data_threads
 	#to 2*delta_data_threads
 
-	delta_data_threads = dtn_transformed.shape[0]//nb_threads
+	#delta_data_threads = dtn_transformed.shape[0]//nb_threads
 	#last thead has dtn_transformed going from (nb_threads-1)*delta_data_threads
 	#to nb_threads*delta_data_threads + last_threads_delta_plus since we don't
 	#always have data divided by nb_threads
-	last_threads_delta_plus = dtn_transformed.shape[0] - delta_data_threads*nb_threads
-	for i in range(0, len(threads)):
-		data_part = dtn_transformed[i*delta_data_threads:(i+1)*delta_data_threads]
-		if i == nb_threads-1:#last thread
-			data_part = dtn_transformed[i*delta_data_threads:(i+1)*delta_data_threads+last_threads_delta_plus]
-		threads[i] = Thread(target=hack, args=(conf, Xgt, data_part, nb_result, threads_results, i))
-		threads[i].start()
+	#last_threads_delta_plus = dtn_transformed.shape[0] - delta_data_threads*nb_threads
+	#for i in range(0, len(threads)):
+		#data_part is now list of items of each id_user from dt
+		#data_part = dtn_transformed[i*delta_data_threads:(i+1)*delta_data_threads]
+		#if i == nb_threads-1:#last thread
+		#	data_part = dtn_transformed[i*delta_data_threads:(i+1)*delta_data_threads+last_threads_delta_plus]
+		#threads[i] = Thread(target=hack, args=hack(conf, gt, Xgt, data_part, nb_result, threads_results, i))
+		#threads[i].start()
 		#print("Thread", i, "started")
+	print("Found", len(list(shopping_lists.keys())), "users to desanonymize")
+	print("")
+	for id_user in shopping_lists.keys():
+		items_transformed = np.asarray([dtn_transformed[index] for index in [sl[0] for sl in shopping_lists[id_user]]])
+		best_desanonymised_id_user = hack(conf, id_user, gt, np.delete(Xgt, rows_index_to_delete, 0), items_transformed, nb_result)
+		result[id_user] = best_desanonymised_id_user
 
-	for i in range(0, len(threads)):
-		threads[i].join()
+		rows_index_to_delete = rows_index_to_delete+[sl[0] for sl in gtn_shopping_lists[best_desanonymised_id_user]]
+
+	print(result)
+	exit()
+	#for i in range(0, len(threads)):
+		#threads[i].join()
 		#print("Thread", i, "joined")
 
 	#compile all threads results and keep order
-	for tresult in threads_results:
-		result = result+tresult
+	#for tresult in threads_results:
+		#result = result+tresult
 
 	############################################################################
 	#pretty print result
@@ -295,14 +326,13 @@ def main():
 
 	save_conf(conf, conf_file_path)
 	print("Result written in", out_path)
-	print("Conf save in ", conf_file_path)
+	print("Conf saved in ", conf_file_path)
 
 
 if __name__ == "__main__":
 	print("#"*100)
 	print("# Faire une recherche par identifiant unique, rechercher toutes les lignes d'un identifiant de la bdd anonymisé, puis par une analyse fréquentielle déterminer l'id le plus probable")
 	print("# Ensuite supprimer toutes les lignes de ground truth qui ont l'id le plus probable pour faire en sorte que l'id ne soit plus choisie")
-	print("# Verifier que l'encoder prend bien les memes vecteurs pour apprendre")
 	print("#"*100)
 
 	parser = argparse.ArgumentParser()
@@ -323,7 +353,7 @@ if __name__ == "__main__":
 	parser.add_argument("-fie", "--force-item-equality", help="force items to be equal when finding closest vectors", default=True, action="store_false")
 	parser.add_argument("-fqe", "--force-qtt-equality", help="force qtts to be equal when finding closest vectors", default=True, action="store_false")
 
-	parser.add_argument("-t", "--threads", help="number of threads", type=int, default=1)
+	#parser.add_argument("-t", "--threads", help="number of threads", type=int, default=1)
 
 	parser.add_argument("-v", "--verbose", help="show more informations", default=False, action="store_true")
 
@@ -349,7 +379,8 @@ if __name__ == "__main__":
 	force_item_equality = args.force_item_equality 	#default True
 	force_qtt_equality = args.force_qtt_equality 	#default True
 
-	nb_threads = args.threads						#default 1
+	#disabled for the v2 since we have to update gt
+	nb_threads = 1#args.threads						#default 1
 
 	show_result = args.verbose
 

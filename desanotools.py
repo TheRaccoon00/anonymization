@@ -144,7 +144,7 @@ def apply_transform(dfn, trans_table, num_col):
 	trans_table_rev = {v: k for k, v in trans_table.items()}
 	return dfn, trans_table, trans_table_rev
 
-def get_similar(Xgt, Xdt_row, conf, encoder_model, return_length=10):
+def get_similar(gt, Xgt, Xdt_row, conf, encoder_model, return_length=10):
 
 	use_index, use_dates, use_hours, use_items, use_scaler, force_year_equality,\
 	force_month_equality, force_day_equality, force_item_equality,\
@@ -229,7 +229,10 @@ def get_similar(Xgt, Xdt_row, conf, encoder_model, return_length=10):
 		#print("max distance : ", max([d[1] for d in distances]))
 		#print("min distance : ", min([d[1] for d in distances]))
 
-		for i in range(0, return_length):
+		#gt_res = list(gt.loc[distances[i][0]])
+		#[print(list(gt.loc[distances[i][0]]), distances[i], init_Xgt[distances[i][0]]) for i in range(0, len(distances))]
+		#exit()
+		for i in range(0, min(len(distances), return_length)):
 			#(Xgt index, Xgt_vect)
 			#euclidian distance / score
 			similar_rows.append((distances[i][0], init_Xgt[distances[i][0]]))
@@ -375,3 +378,15 @@ def export_f_file(gtn, sfn, dfn, out_path):
 	for vec in res:
 		f_file.write(','.join(vec)+"\n")
 	f_file.close()
+
+def	find_shopping_list(dtn, id_index):
+	#return items for each user with it's dt index
+	#ids = [str(dtn[i][id_index]) for i in range(0, dtn.shape[0])]
+	shopping_lists = dict()
+	for index, dtn_row in enumerate(dtn):
+		if shopping_lists.get(str(dtn_row[id_index]), None) == None:
+			shopping_lists[str(dtn_row[id_index])] = list()
+
+		shopping_lists[str(dtn_row[id_index])].append((index, dtn_row))
+	#print(shopping_lists)
+	return shopping_lists
