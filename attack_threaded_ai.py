@@ -18,6 +18,7 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler, RobustScaler, MaxAbsScaler
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 from threading import Thread
+from encoder import AutoEncoderTrainer
 
 #turnn off fucking ugly warnings
 import warnings
@@ -184,6 +185,24 @@ def main():
 	Xdt	 = np.asarray(Xdt, dtype=np.float64)
 
 	############################################################################
+	#make autoencoder easy to train
+	need_autoencoder_train = input("Need autoencoder train ? (y/*) : ")
+	if need_autoencoder_train.lower() == "y":
+		aet = AutoEncoderTrainer(Xgt)
+
+		train_successful = False
+		while not train_successful:
+			aet.train()
+			train_successful_input = input("Train successful ? (y/*) : ")
+			if train_successful_input.lower() == "y":
+				train_successful = True
+
+		aet.save_model(aet.encoder_model, "encoder.h5")
+
+		encoder_model = load_autoencoder("encoder.h5")
+
+
+	############################################################################
 	#just to make things clear
 
 	#Xgt and Xdt are vectors based on ground_truth and converted to float64 numbers
@@ -216,7 +235,6 @@ def main():
 	#to nb_threads*delta_data_threads + last_threads_delta_plus since we don't
 	#always have data divided by nb_threads
 	last_threads_delta_plus = dtn_transformed.shape[0] - delta_data_threads*nb_threads
-	print(dtn_transformed.shape[0])
 	for i in range(0, len(threads)):
 		data_part = dtn_transformed[i*delta_data_threads:(i+1)*delta_data_threads]
 		if i == nb_threads-1:#last thread
@@ -284,7 +302,7 @@ if __name__ == "__main__":
 	print("#"*100)
 	print("# Faire une recherche par identifiant unique, rechercher toutes les lignes d'un identifiant de la bdd anonymisé, puis par une analyse fréquentielle déterminer l'id le plus probable")
 	print("# Ensuite supprimer toutes les lignes de ground truth qui ont l'id le plus probable pour faire en sorte que l'id ne soit plus choisie")
-	printt("# Verifier que l'encoder prend bien les memes vecteurs pour apprendre")
+	print("# Verifier que l'encoder prend bien les memes vecteurs pour apprendre")
 	print("#"*100)
 
 	parser = argparse.ArgumentParser()
