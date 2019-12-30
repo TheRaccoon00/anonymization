@@ -388,5 +388,10 @@ def	find_shopping_list(dtn, id_index):
 			shopping_lists[str(dtn_row[id_index])] = list()
 
 		shopping_lists[str(dtn_row[id_index])].append((index, dtn_row))
-	#print(shopping_lists)
+	#
+
+	print(shopping_lists)
 	return shopping_lists
+
+def output(gt, result, out_path):
+	pass

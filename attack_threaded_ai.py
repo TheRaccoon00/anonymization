@@ -272,8 +272,8 @@ def main():
 
 		rows_index_to_delete = rows_index_to_delete+[sl[0] for sl in gtn_shopping_lists[best_desanonymised_id_user]]
 
-	print(result)
-	exit()
+	#print(result)
+	#exit()
 	#for i in range(0, len(threads)):
 		#threads[i].join()
 		#print("Thread", i, "joined")
@@ -285,44 +285,10 @@ def main():
 	############################################################################
 	#pretty print result
 
-	list_desanonymized = []
-	#real	0m40,618s => 5000 row (5 threads) => 0h45 min
-	#real	0m57,179s => 5000 row (1 thread) => 1h5 min
-	print("\n\n\n")
-	if show_result:
-		print("Results :")
-
-	for res in result:
-		dt_vec_index = res[0]			#index of the row in dtn (this is the index of the row that we want to crack)
-		dt_vec = res[1]					#the row that we want to crack which is dtn_transformed[i]
-		closest_vecs = res[2]			#this is a list of tuple (index_of_closest_row_in_Xgt, closest_Xgt_row)
-		scores = res[3]					#list of score corresponding to the tuple of closest_vecs having close score of closest_vec
-
-		if len(closest_vecs) > 0:
-			for i in range(0, len(closest_vecs)):
-				gt_closest_entry_index = closest_vecs[i][0]						#index_of_closest_row_in_Xgt
-				closest_vec = closest_vecs[i][1]								#closest_Xgt_row
-				score = scores[i]												#close score of closest_vec
-				gt_closest_entry = np.asarray(gt.loc[gt_closest_entry_index])	#the closest row in gt mean not vectorized (the result in clear of the cracked row)
-				list_desanonymized.append(gt_closest_entry)
-				dt_entry = np.asarray(dt.loc[dt_vec_index])						#the row that is cracked not vectorized
-
-				#closest_entry is the same as gt_closest_entry but gt_closest_entry has the user_id
-				#closest_entry = reverse_vector(closest_vec, sscaler, trans_table_date_y_rev, trans_table_date_m_rev, trans_table_date_d_rev, trans_table_hours_rev, trans_table_item_rev)
-
-				#result is displayed here
-				if show_result:
-					print("#"*50)
-					print("Closest vector of anonymized row (dtn index = "+str(dt_vec_index)+")", dt_entry, "is", gt_closest_entry, "(gtn index = "+str(gt_closest_entry_index)+")")
-					print("data :", dt_entry, "=>", gt_closest_entry)
-					#print("vectors :", dt_vec, "=>", list(closest_vec))
-					#print("score =", score)
-		else:
-			list_desanonymized.append(np.asarray(["None","None","None","None","None","None"]))
-
 	#dt_desanonymized = pd.DataFrame(list_desanonymized, columns=["id_user","date","hours","id_item","price","qty"])
 	#dt_desanonymized.to_csv(out_path, index=False)
-	export_f_file(gtn, dtn, list_desanonymized, out_path)
+	#export_f_file(gtn, dtn, list_desanonymized, out_path)
+	output(gt, result, out_path)
 
 	save_conf(conf, conf_file_path)
 	print("Result written in", out_path)
