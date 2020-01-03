@@ -321,10 +321,11 @@ def export_f_file(gtn, sfn, dfn, out_path):
 	id_user_set = sorted(list(set(dfn[:,0].astype(str).tolist())))
 
 	res = []
-	for id_user in id_user_set:
+	for i, id_user in enumerate(id_user_set):
+		print(i,"/", len(list(id_user_set)), end="\r")
 
-		all_dfn_rows_having_same_dfn_id_user = dfn[np.where(dfn[:, 0] == id_user)]
-		all_sfn_rows_having_same_dfn_id_user = sfn[np.where(dfn[:, 0] == id_user)]
+		all_dfn_rows_having_same_dfn_id_user = dfn[np.where(dfn[:, 0].astype(str) == id_user)]
+		all_sfn_rows_having_same_dfn_id_user = sfn[np.where(dfn[:, 0].astype(str) == id_user)]
 		#print(all_dfn_rows_having_same_dfn_id_user)
 		#print(all_sfn_rows_having_same_dfn_id_user)
 		#print(all_dfn_rows_having_same_dfn_id_user[:, 1])
@@ -371,7 +372,6 @@ def export_f_file(gtn, sfn, dfn, out_path):
 
 	res = sorted(res, key = lambda x: x[0])
 
-	os.remove()
 	f_file = open(out_path, "a")
 	f_file.write("id_user,0,1,2,3,4,5,6,7,8,9,10,11,12\n")
 
@@ -390,7 +390,7 @@ def	find_shopping_list(dtn, id_index):
 		shopping_lists[str(dtn_row[id_index])].append((index, dtn_row))
 	#
 
-	print(shopping_lists)
+	#print(shopping_lists)
 	return shopping_lists
 
 def output(gt, result, out_path):

@@ -106,11 +106,11 @@ class AutoEncoderTrainer(object):
 		print("Train result : "+','.join([metrics_names[i]+" : "+str(eval[i]) for i in range(0, len(eval))]))
 
 	def test(self):
-		if self.encoder_model != None:
+		if self.encoder_model == None:
 			print("Impossible to test encoder_model because it's not set")
 
 		Xgt_encoded = self.encoder_model.predict(self.Xgt[0:100])
-		print(Xgt[0])
+		print(self.Xgt[0])
 		print(Xgt_encoded[0])
 
 		#encoder_model.save("encoder.h5")
@@ -124,25 +124,24 @@ class AutoEncoderTrainer(object):
 	def save_model(self, model, file_path):
 		model.save(file_path)
 
-	def get_encoder_model(self, input_vec_length):
-		model = Sequential()
-		model.add(Dense(input_vec_length*2, input_shape=(input_vec_length,), activation = 'sigmoid'))
-		model.add(Dense(input_vec_length, activation='relu'))
-
-		model.compile(optimizer='adam', loss='mse', metrics=['acc'])
-		print(model.summary())
-		return model
-
 	def get_auto_encoder_model(self, input_vec_length):
+
+#before, adam for 3d converge and linear for better space representation
+#		input_vec = Input(shape=(input_vec_length,))
+#		encoded = Dense(units=3, activation='relu')(input_vec)
+#		encoded = Dense(units=3, activation='relu')(input_vec)
+#		decoded = Dense(units=input_vec_length, activation='relu')(encoded)
+#
+#		autoencoder=Model(input_vec, decoded)
+#		autoencoder.compile(optimizer='rmsprop', loss='mse', metrics=['accuracy'])
+
 		input_vec = Input(shape=(input_vec_length,))
-		encoded = Dense(units=8, activation='relu')(input_vec)
-		#encoded = Dense(units=8, activation='relu')(input_vec)
-		#encoded = Dense(units=3, activation='relu')(encoded)
-		#decoded = Dense(units=64, activation='relu')(encoded)
+		encoded = Dense(units=3, activation='linear')(input_vec)
+		encoded = Dense(units=3, activation='linear')(input_vec)
 		decoded = Dense(units=input_vec_length, activation='relu')(encoded)
 
 		autoencoder=Model(input_vec, decoded)
-		autoencoder.compile(optimizer='rmsprop', loss='mse', metrics=['accuracy'])
+		autoencoder.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
 
 		encoder = Model(input_vec, encoded)
 		return autoencoder, encoder

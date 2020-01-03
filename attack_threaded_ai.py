@@ -27,6 +27,7 @@ warnings.filterwarnings(action='ignore', category=DataConversionWarning)
 
 from encoder import load_autoencoder
 from desanotools import *
+from plotter import *
 
 #change this values in function of what is in anonymized data
 use_index = False			#default False
@@ -61,7 +62,6 @@ conf_file_path = ""
 
 encoder_model = load_autoencoder("encoder.h5")
 
-
 def hack(conf, id_user, gt, Xgt, dtn_transformed_part, nb_result):
 	#retourne l'id_user le plus probable de la liste de course dtn_transformed_part
 	part_result = []
@@ -88,7 +88,7 @@ def hack(conf, id_user, gt, Xgt, dtn_transformed_part, nb_result):
 	return best_desanonymised_id_user
 
 def main():
-	global id_index, date_index, item_index, hours_index, price_index, qtt_index, use_scaler, nb_threads
+	global id_index, date_index, item_index, hours_index, price_index, qtt_index, use_scaler, nb_threads, encoder_model
 	############################################################################
 	#read and convert datasets
 	#gt is the ground_truth dataset and dt is the anonymized dataset to crack (dt for data)
@@ -221,6 +221,9 @@ def main():
 
 		encoder_model = load_autoencoder("encoder.h5")
 
+	############################################################################
+	#it's funny to see data in 3d !
+	#plot_db(Xgt, Xdt, encoder_model)
 
 	############################################################################
 	#just to make things clear
@@ -239,55 +242,36 @@ def main():
 
 	############################################################################
 	#find the closest vector to Xdt[i] in Xgt
-	print("Let's hack now !!!")
+	#/!\ we don't use threading anymore
 
+	print("Let's hack now !!!")
 
 	nb_result = 1 			#change this to have more result, default 1
 	result = dict()			#final main result handler
 
-	#threads = [None] * nb_threads			#handlers for running threads
-	#threads_results = [None] * nb_threads	#handlers for threads results
-	#dtn_transformed cut from 0 to delta_data_threads then delta_data_threads
-	#to 2*delta_data_threads
-
-	#delta_data_threads = dtn_transformed.shape[0]//nb_threads
-	#last thead has dtn_transformed going from (nb_threads-1)*delta_data_threads
-	#to nb_threads*delta_data_threads + last_threads_delta_plus since we don't
-	#always have data divided by nb_threads
-	#last_threads_delta_plus = dtn_transformed.shape[0] - delta_data_threads*nb_threads
-	#for i in range(0, len(threads)):
-		#data_part is now list of items of each id_user from dt
-		#data_part = dtn_transformed[i*delta_data_threads:(i+1)*delta_data_threads]
-		#if i == nb_threads-1:#last thread
-		#	data_part = dtn_transformed[i*delta_data_threads:(i+1)*delta_data_threads+last_threads_delta_plus]
-		#threads[i] = Thread(target=hack, args=hack(conf, gt, Xgt, data_part, nb_result, threads_results, i))
-		#threads[i].start()
-		#print("Thread", i, "started")
 	print("Found", len(list(shopping_lists.keys())), "users to desanonymize")
 	print("")
-	for id_user in shopping_lists.keys():
+	for i, id_user in enumerate(shopping_lists.keys()):
 		items_transformed = np.asarray([dtn_transformed[index] for index in [sl[0] for sl in shopping_lists[id_user]]])
 		best_desanonymised_id_user = hack(conf, id_user, gt, np.delete(Xgt, rows_index_to_delete, 0), items_transformed, nb_result)
 		result[id_user] = best_desanonymised_id_user
+		print("\n=>", id_user, "=>", best_desanonymised_id_user, "|", len(list(shopping_lists.keys()))-i-1, "id_users remaining")
 
 		rows_index_to_delete = rows_index_to_delete+[sl[0] for sl in gtn_shopping_lists[best_desanonymised_id_user]]
 
-	#print(result)
-	#exit()
-	#for i in range(0, len(threads)):
-		#threads[i].join()
-		#print("Thread", i, "joined")
-
-	#compile all threads results and keep order
-	#for tresult in threads_results:
-		#result = result+tresult
-
 	############################################################################
 	#pretty print result
+	print("Saving result...")
 
 	#dt_desanonymized = pd.DataFrame(list_desanonymized, columns=["id_user","date","hours","id_item","price","qty"])
 	#dt_desanonymized.to_csv(out_path, index=False)
-	#export_f_file(gtn, dtn, list_desanonymized, out_path)
+	#gtn_export = split_date(np.asarray(gt), 1)
+	#sfn_export = split_date(np.asarray(dt), 1)
+	#export_f_file(gtn_export, sfn_export, np.asarray(list_desanonymized), out_path)
+
+	#print(result)
+
+	print("Saving result...")
 	output(gt, result, out_path)
 
 	save_conf(conf, conf_file_path)
