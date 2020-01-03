@@ -213,6 +213,7 @@ def get_similar(Xgt, Xdt_row, conf, encoder_model, return_length=10):
 		#print(Xdt_row[0])
 		Xgt_encoded = encoder_model.predict(Xgt)
 		Xdt_row_encoded = encoder_model.predict(Xdt_row)
+
 		eds = euclidean_distances(Xgt_encoded, Xdt_row_encoded)
 		#decrease dimension
 		eds = [ed[0] for ed in eds]
@@ -318,10 +319,10 @@ def export_f_file(gtn, sfn, dfn, out_path):
 	id_user_set = sorted(list(set(dfn[:,0].astype(str).tolist())))
 
 	res = []
-	for id_user in id_user_set:
-
-		all_dfn_rows_having_same_dfn_id_user = dfn[np.where(dfn[:, 0] == id_user)]
-		all_sfn_rows_having_same_dfn_id_user = sfn[np.where(dfn[:, 0] == id_user)]
+	for i, id_user in enumerate(id_user_set):
+		print(i,"/", len(list(id_user_set)), end="\r")
+		all_dfn_rows_having_same_dfn_id_user = dfn[np.where(dfn[:, 0].astype(str) == id_user)]
+		all_sfn_rows_having_same_dfn_id_user = sfn[np.where(dfn[:, 0].astype(str) == id_user)]
 		#print(all_dfn_rows_having_same_dfn_id_user)
 		#print(all_sfn_rows_having_same_dfn_id_user)
 		#print(all_dfn_rows_having_same_dfn_id_user[:, 1])
@@ -368,7 +369,6 @@ def export_f_file(gtn, sfn, dfn, out_path):
 
 	res = sorted(res, key = lambda x: x[0])
 
-	os.remove()
 	f_file = open(out_path, "a")
 	f_file.write("id_user,0,1,2,3,4,5,6,7,8,9,10,11,12\n")
 

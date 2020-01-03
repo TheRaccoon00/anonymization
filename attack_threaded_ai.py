@@ -11,7 +11,7 @@ warnings.filterwarnings("ignore",category=FutureWarning)
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
 import tensorflow as tf
-
+import pickle
 import pandas as pd
 import time, random, sys, os, argparse
 import numpy as np
@@ -27,6 +27,7 @@ warnings.filterwarnings(action='ignore', category=DataConversionWarning)
 
 from encoder import load_autoencoder
 from desanotools import *
+from plotter import *
 
 #change this values in function of what is in anonymized data
 use_index = False			#default False
@@ -59,7 +60,7 @@ dt_path = ""		#anonymized file path
 out_path = ""		#output file path
 conf_file_path = ""
 
-encoder_model = load_autoencoder("encoder.h5")
+encoder_model = load_autoencoder("encoder_01.h5")
 
 
 def hack(conf, Xgt, dtn_transformed_part, nb_result, result, index):
@@ -74,7 +75,7 @@ def hack(conf, Xgt, dtn_transformed_part, nb_result, result, index):
 	result[index] = part_result
 
 def main():
-	global id_index, date_index, item_index, hours_index, price_index, qtt_index, use_scaler, nb_threads
+	global id_index, date_index, item_index, hours_index, price_index, qtt_index, use_scaler, nb_threads, encoder_model
 	############################################################################
 	#read and convert datasets
 	#gt is the ground_truth dataset and dt is the anonymized dataset to crack (dt for data)
@@ -181,6 +182,14 @@ def main():
 	else:
 		Xdt = dtn_transformed
 
+	#######
+	#model99 = load_autoencoder("encoder_99.h5")
+	#model00 = load_autoencoder("encoder_01.h5")
+	#print(model99.predict(np.asarray([dtn_transformed[0]])))
+	#print(model00.predict(np.asarray([dtn_transformed[0]])))
+	#exit()
+	#######
+
 	Xgt = np.asarray(Xgt, dtype=np.float64)
 	Xdt	 = np.asarray(Xdt, dtype=np.float64)
 
@@ -200,8 +209,11 @@ def main():
 		aet.save_model(aet.encoder_model, "encoder.h5")
 
 		encoder_model = load_autoencoder("encoder.h5")
+		#aet.test()
 
+	plot_db(Xgt, Xdt, encoder_model)
 
+	exit()
 	############################################################################
 	#just to make things clear
 
@@ -291,7 +303,11 @@ def main():
 
 	#dt_desanonymized = pd.DataFrame(list_desanonymized, columns=["id_user","date","hours","id_item","price","qty"])
 	#dt_desanonymized.to_csv(out_path, index=False)
-	export_f_file(gtn, dtn, list_desanonymized, out_path)
+	pickle.dump({"dfn": np.asarray(list_desanonymized)}, open(out_path+"_saved_state.pickle", "wb" ))
+	gtn_export = split_date(np.asarray(gt), 1)
+	sfn_export = split_date(np.asarray(dt), 1)
+
+	export_f_file(gtn_export, sfn_export, np.asarray(list_desanonymized), out_path)
 
 	save_conf(conf, conf_file_path)
 	print("Result written in", out_path)

@@ -4,7 +4,7 @@ warnings.filterwarnings("ignore",category=FutureWarning)
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
 import tensorflow as tf
-
+import pickle
 import pandas as pd
 import time, random, sys, os, argparse
 import numpy as np
@@ -21,22 +21,31 @@ from desanotools import *
 
 gt_file_path = "ground_truth.csv"
 desano_file_path = "S_Files/S_sub2_cat1narvali_desanonymised.csv"
-s_file_path = "S_Files/S_sub2_cat1narvali.csv"
-f_file_path = "F_Files/F_sub2_cat1narvali_by_cat1narvali.csv"
-
+s_file_path = "../docs/CSV_RENDU/S_stage3.csv"
+f_file_path = "F_Files/F_cat1narvali_1_by_cat1_testlow.csv"
+#os.remove(f_file_path)
 gt = pd.read_csv(gt_file_path, sep=",")
-df = pd.read_csv(desano_file_path, sep=",")
+#df = pd.read_csv(desano_file_path, sep=",")
 sf = pd.read_csv(s_file_path, sep=",")
-
-print("Converting datasets...")
+#
+#print("Converting datasets...")
 gtn = np.asarray(gt)
-dfn = np.asarray(df)
+#dfn = np.asarray(df)
 sfn = np.asarray(sf)
-
-print("Splitting dates...")
+#
+#print("Splitting dates...")
 gtn = split_date(gtn, 1)
-dfn = split_date(dfn, 1)
+#dfn = split_date(dfn, 1)
 sfn = split_date(sfn, 1)
+#
+#print(gtn[0])
+#print(dfn[0])
+#print(sfn[0])
+
+data = pickle.load(open("F_cat1narvali_1_by_cat1_test_low.csv_saved_state.pickle", "rb"))
+#gtn = data["gtn"]
+#sfn = data["dtn"]
+dfn = data["dfn"]
 
 print(gtn[0])
 print(dfn[0])
@@ -63,21 +72,44 @@ def get_best_id_freq(vecs):
 		return best_id
 	return "DEL"
 
+def	find_shopping_list(dtn, id_index):
+	#return items for each user with it's dt index
+	#ids = [str(dtn[i][id_index]) for i in range(0, dtn.shape[0])]
+	shopping_lists = dict()
+	for index, dtn_row in enumerate(dtn):
+		if shopping_lists.get(str(dtn_row[id_index]), None) == None:
+			shopping_lists[str(dtn_row[id_index])] = list()
+
+		shopping_lists[str(dtn_row[id_index])].append(np.asarray(dtn_row))
+	#print(shopping_lists)
+	return shopping_lists
+
+shopping_lists_dfn = find_shopping_list(dfn, 0)
+shopping_lists_sfn = find_shopping_list(dfn, 0)
+print(len(list(shopping_lists_dfn.keys())))
+print(len(list(shopping_lists_sfn.keys())))
+
 print("Found", len(list(id_user_set)))
 res = []
-for id_user in id_user_set:
-
-	all_dfn_rows_having_same_dfn_id_user = dfn[np.where(dfn[:, 0] == id_user)]
-	all_sfn_rows_having_same_dfn_id_user = sfn[np.where(dfn[:, 0] == id_user)]
-	#print(all_dfn_rows_having_same_dfn_id_user)
-	#print(all_sfn_rows_having_same_dfn_id_user)
+for i, id_user in enumerate(id_user_set):
+	print(i,"/", len(list(id_user_set)), end="\r")
+	start_time = time.time()
+	ids = np.where(dfn[:, 0].astype(str) == id_user)
+	#print(ids)
+	all_dfn_rows_having_same_dfn_id_user = dfn[ids]
+	all_sfn_rows_having_same_dfn_id_user = sfn[ids]
+	#print(len(all_dfn_rows_having_same_dfn_id_user))
+	#print(len(all_sfn_rows_having_same_dfn_id_user))
 	#print(all_dfn_rows_having_same_dfn_id_user[:, 1])
+	#print(time.time()-start_time)
+	start_time = time.time()
 
-	#all of the are in 0
+	#all of them are in 0
 	all_dfn_row_in_tendec = all_sfn_rows_having_same_dfn_id_user[np.where(all_sfn_rows_having_same_dfn_id_user[:, 1] == '2010')]
 	best_tendec_id = get_best_id_freq(all_dfn_row_in_tendec)
 	all_dfn_row_in_eledec = all_sfn_rows_having_same_dfn_id_user[np.where(all_sfn_rows_having_same_dfn_id_user[:, 1] == '2011')]
-
+	#print(time.time()-start_time)
+	start_time = time.time()
 	all_dfn_row_in_eledecone = all_dfn_row_in_eledec[np.where(all_dfn_row_in_eledec[:, 2] == '1')]
 	all_dfn_row_in_eledectwo = all_dfn_row_in_eledec[np.where(all_dfn_row_in_eledec[:, 2] == '2')]
 	all_dfn_row_in_eledecthr = all_dfn_row_in_eledec[np.where(all_dfn_row_in_eledec[:, 2] == '3')]
@@ -90,7 +122,8 @@ for id_user in id_user_set:
 	all_dfn_row_in_eledecten = all_dfn_row_in_eledec[np.where(all_dfn_row_in_eledec[:, 2] == '10')]
 	all_dfn_row_in_eledecele = all_dfn_row_in_eledec[np.where(all_dfn_row_in_eledec[:, 2] == '11')]
 	all_dfn_row_in_eledectwe = all_dfn_row_in_eledec[np.where(all_dfn_row_in_eledec[:, 2] == '12')]
-
+	#print(time.time()-start_time)
+	start_time = time.time()
 	eledecone_best_id = get_best_id_freq(all_dfn_row_in_eledecone)
 	eledectwo_best_id = get_best_id_freq(all_dfn_row_in_eledectwo)
 	eledecthr_best_id = get_best_id_freq(all_dfn_row_in_eledecthr)
@@ -103,12 +136,15 @@ for id_user in id_user_set:
 	eledecten_best_id = get_best_id_freq(all_dfn_row_in_eledecten)
 	eledecele_best_id = get_best_id_freq(all_dfn_row_in_eledecele)
 	eledectwe_best_id = get_best_id_freq(all_dfn_row_in_eledectwe)
-
+	#print(time.time()-start_time)
+	start_time = time.time()
 	vec = [str(id_user), best_tendec_id, eledecone_best_id, eledectwo_best_id, eledecthr_best_id, eledecfou_best_id, eledecfiv_best_id, eledecsix_best_id, eledecsev_best_id, eledeceig_best_id, eledecnin_best_id, eledecten_best_id, eledecele_best_id, eledectwe_best_id]
+	#print(time.time()-start_time)
+	start_time = time.time()
 	res.append(vec)
 
 missing_ids = list(set(all_gt_id_user)-set([v[0] for v in res]))
-
+print("missing_ids", len(missing_ids))
 for missing_id_user in missing_ids:
 	vec = [str(missing_id_user), "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL"]
 	res.append(vec)
