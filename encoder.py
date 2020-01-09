@@ -139,7 +139,7 @@ class AutoEncoderTrainer(object):
 		input_vec = Input(shape=(input_vec_length,))
 		encoded = Dense(units=3, activation='linear')(input_vec)
 		decoded = Dense(units=3, activation='linear')(encoded)
-		decoded = Dense(units=input_vec_length, activation='relu')(encoded)
+		decoded = Dense(units=input_vec_length, activation='linear')(encoded)
 
 		#best
 		#input_vec = Input(shape=(input_vec_length,))

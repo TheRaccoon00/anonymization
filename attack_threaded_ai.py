@@ -210,7 +210,8 @@ def main():
 
 		encoder_model = load_autoencoder("encoder.h5")
 		#aet.test()
-
+	#print(Xdt[0])
+	#print(dtn[0])
 	plot_db(Xgt, Xdt, encoder_model)
 
 	exit()

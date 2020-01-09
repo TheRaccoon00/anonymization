@@ -7,10 +7,10 @@ def	plot_db(Xgt, Xdt, encoder_model):
 	np.random.shuffle(Xgt)
 	np.random.shuffle(Xdt)
 
-	Xgt = Xgt[0: 5000]
+	Xgt = Xgt[0: 1000]
 	Xgt_encoded = encoder_model.predict(Xgt)
 
-	Xdt = Xdt[0: 5000]
+	Xdt = Xdt[0: 1000]
 	Xdt_encoded = encoder_model.predict(Xdt)
 
 	print(Xgt[0:3])
@@ -18,7 +18,7 @@ def	plot_db(Xgt, Xdt, encoder_model):
 
 	fig = plt.figure()
 	ax = plt.axes(projection='3d')
-	
+
 	# Data for three-dimensional scattered points
 	#Xgt
 	#xdata, ydata, zdata = Xgt[:, 0], Xgt[:, 1], Xgt[:, 2]
