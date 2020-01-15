@@ -381,7 +381,7 @@ def export_f_file(gtn, sfn, dfn, out_path):
 def	find_shopping_list(dtn, id_index):
 	#return items for each user with it's dt index
 	#ids = [str(dtn[i][id_index]) for i in range(0, dtn.shape[0])]
-	shopping_lists = dict().gtn
+	shopping_lists = dict()
 	for index, dtn_row in enumerate(dtn):
 		if shopping_lists.get(str(dtn_row[id_index]), None) == None:
 			shopping_lists[str(dtn_row[id_index])] = list()
