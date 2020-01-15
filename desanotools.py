@@ -294,7 +294,6 @@ def reverse_vector(vec, scaler, conf, trans_table_date_y_rev, trans_table_date_m
 def split_date(X, date_index):
 	out = []
 	for i in range(0, X.shape[0]):
-		#print(X[i][date_index])
 		y, m, d = X[i][date_index].split("/")
 		y, m, d = int(y), int(m), int(d)
 		x_i = list(X[i])
@@ -382,7 +381,7 @@ def export_f_file(gtn, sfn, dfn, out_path):
 def	find_shopping_list(dtn, id_index):
 	#return items for each user with it's dt index
 	#ids = [str(dtn[i][id_index]) for i in range(0, dtn.shape[0])]
-	shopping_lists = dict()
+	shopping_lists = dict().gtn
 	for index, dtn_row in enumerate(dtn):
 		if shopping_lists.get(str(dtn_row[id_index]), None) == None:
 			shopping_lists[str(dtn_row[id_index])] = list()
@@ -393,5 +392,89 @@ def	find_shopping_list(dtn, id_index):
 	print(shopping_lists)
 	return shopping_lists
 
+
 def output(gt, result, out_path):
-	pass
+	gtn = np.asarray(gt)
+	result = {v: k for k, v in result.items()}
+
+	id_users_gt = gtn[:,0]
+	print(id_users_gt)
+	id_users_dt = list(result.values())
+	print(id_users_dt)
+	missing_ids = list(set(id_users_gt)-set(list(result.keys())))
+	print(missing_ids)
+
+	out_dict = dict()
+
+	for gtn_row in gtn:
+		id_user = gtn_row[0]
+		date = split_date(np.asarray([gtn_row]), 1)
+		y, m, d = date[0][1], date[0][2], date[0][3]
+		print(type(y), m, d)
+		if out_dict.get(id_user, None) == None:
+			out_dict[id_user] = ["DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL"]
+		print(out_dict[id_user])
+		if y == "2010":
+			out_dict[id_user][0] = result.get(id_user, "DEL")
+		elif y == "2011":
+			if m == "1":
+				out_dict[id_user][1] = result.get(id_user, "DEL")
+			if m == "2":
+				out_dict[id_user][2] = result.get(id_user, "DEL")
+			if m == "3":
+				out_dict[id_user][3] = result.get(id_user, "DEL")
+			if m == "4":
+				out_dict[id_user][4] = result.get(id_user, "DEL")
+			if m == "5":
+				out_dict[id_user][5] = result.get(id_user, "DEL")
+			if m == "6":
+				out_dict[id_user][6] = result.get(id_user, "DEL")
+			if m == "7":
+				out_dict[id_user][7] = result.get(id_user, "DEL")
+			if m == "8":
+				out_dict[id_user][8] = result.get(id_user, "DEL")
+			if m == "9":
+				out_dict[id_user][9] = result.get(id_user, "DEL")
+			if m == "10":
+				out_dict[id_user][10] = result.get(id_user, "DEL")
+			if m == "11":
+				out_dict[id_user][11] = result.get(id_user, "DEL")
+			if m == "12":
+				out_dict[id_user][12] = result.get(id_user, "DEL")
+		print(out_dict[id_user])
+
+	for ids in missing_ids:
+		out_dict[ids] = ["DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL"]
+
+	out_list = np.asarray([[key]+out_dict[key] for key in list(out_dict.keys())])
+
+	out_list_sorted = out_list[out_list[:, 0].argsort()]
+	print(out_list_sorted[0:3])
+	exit()
+
+	#for missing_id_user in missing_ids:
+	#	vec = [str(missing_id_user), "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL"]
+	#	res.append(vec)
+
+	#todo : write in file
+
+	res = sorted(res, key = lambda x: x[0])
+
+	if os.path.exists(out_path):
+		os.remove(out_path)
+
+	f_file = open(out_path, "a")
+	f_file.write("id_user,0,1,2,3,4,5,6,7,8,9,10,11,12\n")
+
+	for vec in out_list_sorted:
+		f_file.write(','.join(vec)+"\n")
+	f_file.close()
+
+	#for key in list(out_dict.keys()):
+		#pass
+
+if __name__ == '__main__':
+	gt = np.asarray([["AZERTY", "2010/12/01", 3, 8, 9], ["ZERTYU", "2011/01/01", 4, 9, 10], ["ERTYUI", "2011/02/01", 4, 9, 10]])
+	result = {"YTVYGJH":"AZERTY", "UJNKLZ": "ZERTYU"}
+	out_path = "F_File.pute"
+	output(gt, result, out_path)
