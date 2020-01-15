@@ -398,11 +398,8 @@ def output(gt, result, out_path):
 	result = {v: k for k, v in result.items()}
 
 	id_users_gt = gtn[:,0]
-	print(id_users_gt)
 	id_users_dt = list(result.values())
-	print(id_users_dt)
 	missing_ids = list(set(id_users_gt)-set(list(result.keys())))
-	print(missing_ids)
 
 	out_dict = dict()
 
@@ -410,10 +407,10 @@ def output(gt, result, out_path):
 		id_user = gtn_row[0]
 		date = split_date(np.asarray([gtn_row]), 1)
 		y, m, d = date[0][1], date[0][2], date[0][3]
-		print(type(y), m, d)
+
 		if out_dict.get(id_user, None) == None:
 			out_dict[id_user] = ["DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL"]
-		print(out_dict[id_user])
+
 		if y == "2010":
 			out_dict[id_user][0] = result.get(id_user, "DEL")
 		elif y == "2011":
@@ -441,40 +438,24 @@ def output(gt, result, out_path):
 				out_dict[id_user][11] = result.get(id_user, "DEL")
 			if m == "12":
 				out_dict[id_user][12] = result.get(id_user, "DEL")
-		print(out_dict[id_user])
 
 	for ids in missing_ids:
 		out_dict[ids] = ["DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL"]
 
 	out_list = np.asarray([[key]+out_dict[key] for key in list(out_dict.keys())])
-
 	out_list_sorted = out_list[out_list[:, 0].argsort()]
-	print(out_list_sorted[0:3])
-	exit()
-
-	#for missing_id_user in missing_ids:
-	#	vec = [str(missing_id_user), "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL"]
-	#	res.append(vec)
-
-	#todo : write in file
-
-	res = sorted(res, key = lambda x: x[0])
 
 	if os.path.exists(out_path):
 		os.remove(out_path)
 
 	f_file = open(out_path, "a")
 	f_file.write("id_user,0,1,2,3,4,5,6,7,8,9,10,11,12\n")
-
 	for vec in out_list_sorted:
 		f_file.write(','.join(vec)+"\n")
 	f_file.close()
 
-	#for key in list(out_dict.keys()):
-		#pass
-
 if __name__ == '__main__':
 	gt = np.asarray([["AZERTY", "2010/12/01", 3, 8, 9], ["ZERTYU", "2011/01/01", 4, 9, 10], ["ERTYUI", "2011/02/01", 4, 9, 10]])
 	result = {"YTVYGJH":"AZERTY", "UJNKLZ": "ZERTYU"}
-	out_path = "F_File.pute"
+	out_path = "/home/pierre/Documents/INSA/anonymization/F_Files/F_File.csv"
 	output(gt, result, out_path)
