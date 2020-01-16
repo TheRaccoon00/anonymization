@@ -67,7 +67,7 @@ def hack(conf, id_user, gt, Xgt, dtn_transformed_part, nb_result):
 	part_result = []
 	for i in range(0, dtn_transformed_part.shape[0]):	#dtn_transformed.shape[0] change the 5 to dtn_transformed.shape[0] to run all anonymized data
 		#print("\t"*(3*index)+"[Thread"+str(index)+"]"+str(i+1)+"/"+str(dtn_transformed_part.shape[0]), end="\r")
-		print("hacking "+id_user+" => "+str(i+1)+"/"+str(dtn_transformed_part.shape[0])+" | Xgt rows : "+str(Xgt.shape[0]), end="\r")
+		print("hacking "+id_user+" => "+str(i+1)+"/"+str(dtn_transformed_part.shape[0])+"\t\t| Xgt rows : "+str(Xgt.shape[0]), end="\r")
 		input_data = dtn_transformed_part[i]	#the vectorized data we want to crack
 
 		#sim_vectors and sim_scores are list of size <nb_result> having closest vectors of input_data from Xgt
@@ -255,7 +255,7 @@ def main():
 		items_transformed = np.asarray([dtn_transformed[index] for index in [sl[0] for sl in shopping_lists[id_user]]])
 		best_desanonymised_id_user = hack(conf, id_user, gt, np.delete(Xgt, rows_index_to_delete, 0), items_transformed, nb_result)
 		result[id_user] = best_desanonymised_id_user
-		print("\n=>", id_user, "=>", best_desanonymised_id_user, "|", len(list(shopping_lists.keys()))-i-1, "id_users remaining")
+		print("\n=>", id_user, "=>", best_desanonymised_id_user, "|", len(list(shopping_lists.keys()))-i-1, "/", len(list(shopping_lists.keys()))-1,"id_users remaining")
 
 		rows_index_to_delete = rows_index_to_delete+[sl[0] for sl in gtn_shopping_lists[best_desanonymised_id_user]]
 
@@ -270,8 +270,8 @@ def main():
 	#export_f_file(gtn_export, sfn_export, np.asarray(list_desanonymized), out_path)
 
 	#print(result)
-
-	print("Saving result...")
+	#with open('output_dump.pickle', 'wb') as config_dictionary_file:
+	#	pickle.dump({"gt":gt, "result":result, "out_path":out_path}, config_dictionary_file)
 	output(gt, result, out_path)
 
 	save_conf(conf, conf_file_path)
@@ -280,10 +280,6 @@ def main():
 
 
 if __name__ == "__main__":
-	print("#"*100)
-	print("# Faire une recherche par identifiant unique, rechercher toutes les lignes d'un identifiant de la bdd anonymisé, puis par une analyse fréquentielle déterminer l'id le plus probable")
-	print("# Ensuite supprimer toutes les lignes de ground truth qui ont l'id le plus probable pour faire en sorte que l'id ne soit plus choisie")
-	print("#"*100)
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("gt", help="ground_truth csv path", type=str)

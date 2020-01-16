@@ -396,15 +396,15 @@ def	find_shopping_list(dtn, id_index):
 def output(gt, result, out_path):
 	gtn = np.asarray(gt)
 	result = {v: k for k, v in result.items()}
+	#result : { "désanonymisé (gt)": "anonymisé (dt)"}
 
-	id_users_gt = gtn[:,0]
-	id_users_dt = list(result.values())
-	missing_ids = list(set(id_users_gt)-set(list(result.keys())))
-
+	id_users_gt = [str(r) for r in gtn[:,0]]
+	id_users_dt = list(result.keys())
+	missing_ids = list(set(id_users_gt)-set(id_users_dt))
 	out_dict = dict()
 
 	for gtn_row in gtn:
-		id_user = gtn_row[0]
+		id_user = str(gtn_row[0])
 		date = split_date(np.asarray([gtn_row]), 1)
 		y, m, d = date[0][1], date[0][2], date[0][3]
 
