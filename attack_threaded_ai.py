@@ -212,9 +212,9 @@ def main():
 		#aet.test()
 	#print(Xdt[0])
 	#print(dtn[0])
-	plot_db(Xgt, Xdt, encoder_model)
+	#plot_db(Xgt, Xdt, encoder_model)
 
-	exit()
+	#exit()
 	############################################################################
 	#just to make things clear
 
