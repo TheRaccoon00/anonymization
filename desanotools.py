@@ -160,8 +160,10 @@ def get_similar(gt, Xgt, Xdt_row, conf, encoder_model, return_length=10):
 	#reduce space search
 	Xgt = Xgt.copy().astype(np.float64) #make a copy before reducing input
 	Xgt_indexes = np.arange(Xgt.shape[0])
+	#print("Xgt[0]", Xgt[0])
+	#print("Xgt_indexes", Xgt_indexes)
 	Xdt_row = Xdt_row.astype(np.float64) #convert to float 64 because Xgt are float64
-
+	#print("Xdt_row", Xdt_row)
 	if force_year_equality:
 		valid_rows = np.where(Xgt[:, date_index] == Xdt_row[date_index])
 		Xgt = Xgt[valid_rows]
@@ -202,6 +204,8 @@ def get_similar(gt, Xgt, Xdt_row, conf, encoder_model, return_length=10):
 	similar_rows = []
 	similar_rows_score = []
 
+	#print("Xgt.shape[0]", Xgt.shape[0])
+
 	if Xgt.shape[0] > 0:
 
 		#print(cosine_similarity([Xgt[0]], [Xdt_row])[0][0]) #return the similarity of Xgt[0] and Xdt_row => 0.5008987774997233
@@ -222,6 +226,7 @@ def get_similar(gt, Xgt, Xdt_row, conf, encoder_model, return_length=10):
 		#so we stack them and sort them following eds to have best indexes in init_Xgt
 		eds = np.asarray(eds)
 		stacked = np.stack((Xgt_indexes, eds), axis=-1) #[[Xgt_index, score], [Xgt_index, score], [Xgt_index, score], ...]
+		##print("stacked[0]", stacked[0])
 
 		#list of distances from ground_truth vectors to Xdt_row sorted from lower to higher with corresponding index in Xgt
 		distances = sorted(stacked.tolist(), key = lambda x: x[1])
@@ -240,7 +245,7 @@ def get_similar(gt, Xgt, Xdt_row, conf, encoder_model, return_length=10):
 
 		del distances, eds, stacked
 
-	del Xgt, Xgt_indexes
+	#del Xgt, Xgt_indexes
 
 	return np.asarray(similar_rows), similar_rows_score
 

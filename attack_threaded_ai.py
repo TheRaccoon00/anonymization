@@ -64,27 +64,40 @@ encoder_model = load_autoencoder("encoder.h5")
 
 def hack(conf, id_user, gt, Xgt, dtn_transformed_part, nb_result):
 	#retourne l'id_user le plus probable de la liste de course dtn_transformed_part
-	part_result = []
-	for i in range(0, dtn_transformed_part.shape[0]):	#dtn_transformed.shape[0] change the 5 to dtn_transformed.shape[0] to run all anonymized data
+	#part_result = []
+	#print("dtn_transformed_part.shape[0]", dtn_transformed_part.shape[0])
+	#for i in range(0, dtn_transformed_part.shape[0]):	#dtn_transformed.shape[0] change the 5 to dtn_transformed.shape[0] to run all anonymized data
+	#print("\t"*(3*index)+"[Thread"+str(index)+"]"+str(i+1)+"/"+str(dtn_transformed_part.shape[0]), end="\r")
+	#print("hacking "+id_user+"\t\t| Xgt rows : "+str(Xgt.shape[0]))#, end="\r")
+	sim_vectors = []
+	sim_scores = []
+	for i in range(0, dtn_transformed_part.shape[0]):
 		#print("\t"*(3*index)+"[Thread"+str(index)+"]"+str(i+1)+"/"+str(dtn_transformed_part.shape[0]), end="\r")
-		print("hacking "+id_user+" => "+str(i+1)+"/"+str(dtn_transformed_part.shape[0])+"\t\t| Xgt rows : "+str(Xgt.shape[0]), end="\r")
-		input_data = dtn_transformed_part[i]	#the vectorized data we want to crack
+		#sim_vectors and sim_scores are list of size <nb_result> having closest vectors of dtn_transformed_part from Xgt
+		sim_vectors_rows, sim_scores_rows = get_similar(gt, Xgt, dtn_transformed_part[i], conf, encoder_model, return_length=nb_result)
+		[sim_vectors.append(sim_vectors_row) for sim_vectors_row in sim_vectors_rows]
+		[sim_scores.append(sim_scores_row) for sim_scores_row in sim_scores_rows]
 
-		#sim_vectors and sim_scores are list of size <nb_result> having closest vectors of input_data from Xgt
-		sim_vectors, sim_scores = get_similar(gt, Xgt, input_data, conf, encoder_model, return_length=nb_result)
 		#part_result.append((i, input_data.tolist(), sim_vectors, sim_scores))
-		[part_result.append(list(gt.loc[sim_vectors[i][0]])) for i in range(0, len(sim_vectors))]
-
+	#print("sim_vectors", sim_vectors)
+	#print("list(gt.loc[sim_vectors[i][0]])", list(gt.loc[sim_vectors[i][0]]))
+	#[part_result.append(list(gt.loc[sim_vectors[i][0]])) for i in range(0, len(sim_vectors))]
+	#print("gt", gt)
 	id_user_freq = dict()
-	for res in part_result:
-		if id_user_freq.get(str(res[0]), None) == None:
-			id_user_freq[str(res[0])] = 1
+	for res in sim_vectors:
+		id_user = gt.loc[res[0]][0]
+		#print(id_user)
+		if id_user_freq.get(str(id_user), None) == None:
+			id_user_freq[str(id_user)] = 1
 		else:
-			id_user_freq[str(res[0])] += 1
+			id_user_freq[str(id_user)] += 1
 
 	id_user_freq = {k: v for k, v in sorted(id_user_freq.items(), key=lambda item: item[1], reverse=True)}
+	#print(id_user_freq)
 	best_desanonymised_id_user = list(id_user_freq.keys())[0]
-	print("")
+	#print("")
+	#print(best_desanonymised_id_user)
+	#exit()
 	return best_desanonymised_id_user
 
 def main():
@@ -246,17 +259,28 @@ def main():
 
 	print("Let's hack now !!!")
 
-	nb_result = 1 			#change this to have more result, default 1
+	nb_result = 3 			#change this to have more result, default 1
 	result = dict()			#final main result handler
 
 	print("Found", len(list(shopping_lists.keys())), "users to desanonymize")
 	print("")
 	for i, id_user in enumerate(shopping_lists.keys()):
-		items_transformed = np.asarray([dtn_transformed[index] for index in [sl[0] for sl in shopping_lists[id_user]]])
-		best_desanonymised_id_user = hack(conf, id_user, gt, np.delete(Xgt, rows_index_to_delete, 0), items_transformed, nb_result)
-		result[id_user] = best_desanonymised_id_user
-		print("\n=>", id_user, "=>", best_desanonymised_id_user, "|", len(list(shopping_lists.keys()))-i-1, "/", len(list(shopping_lists.keys()))-1,"id_users remaining")
 
+		#list of rows from gtn with id = id_user
+		items_transformed = np.asarray([dtn_transformed[index] for index in [sl[0] for sl in shopping_lists[id_user]]])
+		#print("id_user", id_user)
+		#print("items_transformed", items_transformed)
+		new_Xgt_with_deleted_items = Xgt#np.delete(Xgt, rows_index_to_delete, 0)
+		print("shape", new_Xgt_with_deleted_items.shape)
+		#print("rows_index_to_delete", rows_index_to_delete)
+		#print("new_Xgt_with_deleted_items", new_Xgt_with_deleted_items)
+		best_desanonymised_id_user = hack(conf, id_user, gt, new_Xgt_with_deleted_items, items_transformed, nb_result)
+		result[id_user] = best_desanonymised_id_user
+
+		print("\n=>", id_user, "=>", best_desanonymised_id_user, "|", len(list(shopping_lists.keys()))-i-1, "/", len(list(shopping_lists.keys()))-1,"id_users remaining, ", new_Xgt_with_deleted_items.shape[0], "rows remaining")
+		#print("gtn_shopping_lists[best_desanonymised_id_user]", gtn_shopping_lists[best_desanonymised_id_user])
+		#print(gtn_shopping_lists[best_desanonymised_id_user])
+		print("len =>", len([sl[0] for sl in gtn_shopping_lists[best_desanonymised_id_user]]))
 		rows_index_to_delete = rows_index_to_delete+[sl[0] for sl in gtn_shopping_lists[best_desanonymised_id_user]]
 
 	############################################################################
