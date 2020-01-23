@@ -1,6 +1,6 @@
 from new_functions import *
 
-start_file = "ground_truth.csv"
+start_file = "datas/ground_truth.csv"
 stages = [start_file,"out_new/stage1.csv","out_new/stage2.csv","out_new/stage3.csv","out_new/stage4.csv","out_new/stage5.csv","out_new/stage6.csv","out_new/stage7.csv"]
 alones = [".alone_items_new"]
 
