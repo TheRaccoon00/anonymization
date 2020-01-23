@@ -144,7 +144,7 @@ def apply_transform(dfn, trans_table, num_col):
 	trans_table_rev = {v: k for k, v in trans_table.items()}
 	return dfn, trans_table, trans_table_rev
 
-def get_similar(Xgt, Xdt_row, conf, encoder_model, return_length=10):
+def get_similar(Xgt, Xdt_row, conf, encoder_model, gt, return_length=10):
 
 	use_index, use_dates, use_hours, use_items, use_scaler, force_year_equality,\
 	force_month_equality, force_day_equality, force_item_equality,\
@@ -230,7 +230,7 @@ def get_similar(Xgt, Xdt_row, conf, encoder_model, return_length=10):
 		#print("max distance : ", max([d[1] for d in distances]))
 		#print("min distance : ", min([d[1] for d in distances]))
 
-		for i in range(0, return_length):
+		for i in range(0, min(len(distances), return_length)):
 			#(Xgt index, Xgt_vect)
 			#euclidian distance / score
 			similar_rows.append((distances[i][0], init_Xgt[distances[i][0]]))
@@ -238,6 +238,11 @@ def get_similar(Xgt, Xdt_row, conf, encoder_model, return_length=10):
 
 		del distances, eds, stacked
 
+	ids = [list(gt.loc[i]) for i in [sr[0] for sr in similar_rows]]
+	print(ids)
+	#do frequency analysis
+	print("TODO : do frequency analysis")
+	exit()
 	del Xgt, Xgt_indexes
 
 	return np.asarray(similar_rows), similar_rows_score
@@ -313,6 +318,13 @@ def get_best_id_freq(vecs):
 		best_id = keys[values.index(max(values))]
 		return best_id
 	return "DEL"
+
+def get_best_vec(res):
+	index = res[0]
+	vec_to_desano = res[1]
+	vecs = res[2]
+	vec_scores = res[3]
+
 
 def export_f_file(gtn, sfn, dfn, out_path):
 	all_gt_id_user = list(set(gtn[:,0].astype(str).tolist()))

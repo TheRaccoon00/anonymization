@@ -63,14 +63,16 @@ conf_file_path = ""
 encoder_model = load_autoencoder("encoder_01.h5")
 
 
-def hack(conf, Xgt, dtn_transformed_part, nb_result, result, index):
+def hack(conf, Xgt, dtn_transformed_part, nb_result, result, index, gt):
 	part_result = []
 	for i in range(0, dtn_transformed_part.shape[0]):	#dtn_transformed.shape[0] change the 5 to dtn_transformed.shape[0] to run all anonymized data
-		print("\t"*(3*index)+"[Thread"+str(index)+"]"+str(i+1)+"/"+str(dtn_transformed_part.shape[0]), end="\r")
+		print("\t"*(3*index)+"[Thread"+str(index)+"]"+str(i+1)+"/"+str(dtn_transformed_part.shape[0]))#, end="\r")
 		input_data = dtn_transformed_part[i]	#the vectorized data we want to crack
 
 		#sim_vectors and sim_scores are list of size <nb_result> having closest vectors of input_data from Xgt
-		sim_vectors, sim_scores = get_similar(Xgt, input_data, conf, encoder_model, return_length=nb_result)
+		sim_vectors, sim_scores = get_similar(Xgt, input_data, conf, encoder_model, gt, return_length=nb_result)
+		print("sim_vectors", sim_vectors)
+		print("sim_scores", sim_scores)
 		part_result.append((i, input_data.tolist(), sim_vectors, sim_scores))
 	result[index] = part_result
 
@@ -235,14 +237,14 @@ def main():
 	print("Let's hack now !!!")
 
 
-	nb_result = 1 			#change this to have more result, default 1
+	nb_result = 10 			#change this to have more result, default 1
 	result = []				#final main result handler
 
 	threads = [None] * nb_threads			#handlers for running threads
 	threads_results = [None] * nb_threads	#handlers for threads results
 	#dtn_transformed cut from 0 to delta_data_threads then delta_data_threads
 	#to 2*delta_data_threads
-
+	dtn_transformed = dtn_transformed[0:10]
 	delta_data_threads = dtn_transformed.shape[0]//nb_threads
 	#last thead has dtn_transformed going from (nb_threads-1)*delta_data_threads
 	#to nb_threads*delta_data_threads + last_threads_delta_plus since we don't
@@ -252,7 +254,7 @@ def main():
 		data_part = dtn_transformed[i*delta_data_threads:(i+1)*delta_data_threads]
 		if i == nb_threads-1:#last thread
 			data_part = dtn_transformed[i*delta_data_threads:(i+1)*delta_data_threads+last_threads_delta_plus]
-		threads[i] = Thread(target=hack, args=(conf, Xgt, data_part, nb_result, threads_results, i))
+		threads[i] = Thread(target=hack, args=(conf, Xgt, data_part, nb_result, threads_results, i, gt))
 		threads[i].start()
 		#print("Thread", i, "started")
 
@@ -263,7 +265,7 @@ def main():
 	#compile all threads results and keep order
 	for tresult in threads_results:
 		result = result+tresult
-
+	print(np.asarray(result)[:,0])
 	############################################################################
 	#pretty print result
 
@@ -274,8 +276,8 @@ def main():
 	if show_result:
 		print("Results :")
 
-	for res in result:
-		dt_vec_index = res[0]			#index of the row in dtn (this is the index of the row that we want to crack)
+	for index, res in enumerate(result):
+		dt_vec_index = index#res[0]			#index of the row in dtn (this is the index of the row that we want to crack)
 		dt_vec = res[1]					#the row that we want to crack which is dtn_transformed[i]
 		closest_vecs = res[2]			#this is a list of tuple (index_of_closest_row_in_Xgt, closest_Xgt_row)
 		scores = res[3]					#list of score corresponding to the tuple of closest_vecs having close score of closest_vec
