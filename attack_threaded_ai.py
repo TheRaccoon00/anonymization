@@ -310,6 +310,10 @@ def main():
 
 if __name__ == "__main__":
 
+	print("#########################################")
+	print("# TODO : Réduire le temps de calcul (multithreading)")
+	print("#########################################")
+
 	parser = argparse.ArgumentParser()
 	parser.add_argument("gt", help="ground_truth csv path", type=str)
 	parser.add_argument("dt", help="anonymized csv path", type=str)
