@@ -71,6 +71,7 @@ def hack(conf, id_user, gt, Xgt, dtn_transformed_part, nb_result):
 	#print("hacking "+id_user+"\t\t| Xgt rows : "+str(Xgt.shape[0]))#, end="\r")
 	sim_vectors = []
 	sim_scores = []
+
 	for i in range(0, dtn_transformed_part.shape[0]):
 		#print("\t"*(3*index)+"[Thread"+str(index)+"]"+str(i+1)+"/"+str(dtn_transformed_part.shape[0]), end="\r")
 		#sim_vectors and sim_scores are list of size <nb_result> having closest vectors of dtn_transformed_part from Xgt
@@ -83,21 +84,23 @@ def hack(conf, id_user, gt, Xgt, dtn_transformed_part, nb_result):
 	#print("list(gt.loc[sim_vectors[i][0]])", list(gt.loc[sim_vectors[i][0]]))
 	#[part_result.append(list(gt.loc[sim_vectors[i][0]])) for i in range(0, len(sim_vectors))]
 	#print("gt", gt)
+	st = time.time()
 	id_user_freq = dict()
 	for res in sim_vectors:
-		id_user = gt.loc[res[0]][0]
+		id_user_v = gt.loc[res[0]][0]
 		#print(id_user)
-		if id_user_freq.get(str(id_user), None) == None:
-			id_user_freq[str(id_user)] = 1
+		if id_user_freq.get(str(id_user_v), None) == None:
+			id_user_freq[str(id_user_v)] = 1
 		else:
-			id_user_freq[str(id_user)] += 1
+			id_user_freq[str(id_user_v)] += 1
 
 	id_user_freq = {k: v for k, v in sorted(id_user_freq.items(), key=lambda item: item[1], reverse=True)}
 	#print(id_user_freq)
 	best_desanonymised_id_user = list(id_user_freq.keys())[0]
 	#print("")
-	#print(best_desanonymised_id_user)
+	#print(id_user, "=>", best_desanonymised_id_user)
 	#exit()
+	#print("frequency analysis duration =", time.time()-st)
 	return best_desanonymised_id_user
 
 def main():
@@ -259,7 +262,7 @@ def main():
 
 	print("Let's hack now !!!")
 
-	nb_result = 3 			#change this to have more result, default 1
+	nb_result = 15			#change this to have more result, default 1
 	result = dict()			#final main result handler
 
 	print("Found", len(list(shopping_lists.keys())), "users to desanonymize")
@@ -271,17 +274,19 @@ def main():
 		#print("id_user", id_user)
 		#print("items_transformed", items_transformed)
 		new_Xgt_with_deleted_items = Xgt#np.delete(Xgt, rows_index_to_delete, 0)
-		print("shape", new_Xgt_with_deleted_items.shape)
+		#print("shape", new_Xgt_with_deleted_items.shape)
 		#print("rows_index_to_delete", rows_index_to_delete)
 		#print("new_Xgt_with_deleted_items", new_Xgt_with_deleted_items)
+		st = time.time()
 		best_desanonymised_id_user = hack(conf, id_user, gt, new_Xgt_with_deleted_items, items_transformed, nb_result)
 		result[id_user] = best_desanonymised_id_user
+		print("hack duration =", time.time()-st)
 
 		print("\n=>", id_user, "=>", best_desanonymised_id_user, "|", len(list(shopping_lists.keys()))-i-1, "/", len(list(shopping_lists.keys()))-1,"id_users remaining, ", new_Xgt_with_deleted_items.shape[0], "rows remaining")
 		#print("gtn_shopping_lists[best_desanonymised_id_user]", gtn_shopping_lists[best_desanonymised_id_user])
 		#print(gtn_shopping_lists[best_desanonymised_id_user])
 		print("len =>", len([sl[0] for sl in gtn_shopping_lists[best_desanonymised_id_user]]))
-		rows_index_to_delete = rows_index_to_delete+[sl[0] for sl in gtn_shopping_lists[best_desanonymised_id_user]]
+		rows_index_to_delete = rows_index_to_delete#+[sl[0] for sl in gtn_shopping_lists[best_desanonymised_id_user]]
 
 	############################################################################
 	#pretty print result
@@ -323,7 +328,7 @@ if __name__ == "__main__":
 	parser.add_argument("-fie", "--force-item-equality", help="force items to be equal when finding closest vectors", default=True, action="store_false")
 	parser.add_argument("-fqe", "--force-qtt-equality", help="force qtts to be equal when finding closest vectors", default=True, action="store_false")
 
-	#parser.add_argument("-t", "--threads", help="number of threads", type=int, default=1)
+	parser.add_argument("-t", "--threads", help="number of threads", type=int, default=1)
 
 	parser.add_argument("-v", "--verbose", help="show more informations", default=False, action="store_true")
 
@@ -350,7 +355,7 @@ if __name__ == "__main__":
 	force_qtt_equality = args.force_qtt_equality 	#default True
 
 	#disabled for the v2 since we have to update gt
-	nb_threads = 1#args.threads						#default 1
+	nb_threads = args.threads						#default 1
 
 	show_result = args.verbose
 
