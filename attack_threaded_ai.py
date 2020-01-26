@@ -262,7 +262,7 @@ def main():
 
 	print("Let's hack now !!!")
 
-	nb_result = 15			#change this to have more result, default 1
+	nb_result = 30			#change this to have more result, default 1
 	result = dict()			#final main result handler
 
 	print("Found", len(list(shopping_lists.keys())), "users to desanonymize")
