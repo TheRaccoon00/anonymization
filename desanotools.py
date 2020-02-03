@@ -245,7 +245,7 @@ def get_similar(gt, Xgt, Xdt_row, conf, encoder_model, return_length=10):
 
 		del distances, eds, stacked
 
-	#del Xgt, Xgt_indexes
+	del Xgt, Xgt_indexes
 
 	return np.asarray(similar_rows), similar_rows_score
 

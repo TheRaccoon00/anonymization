@@ -94,9 +94,14 @@ def hack(conf, id_user, gt, Xgt, dtn_transformed_part, nb_result):
 		else:
 			id_user_freq[str(id_user_v)] += 1
 
+	#print(id_user_freq)
 	id_user_freq = {k: v for k, v in sorted(id_user_freq.items(), key=lambda item: item[1], reverse=True)}
 	#print(id_user_freq)
-	best_desanonymised_id_user = list(id_user_freq.keys())[0]
+	k = list(id_user_freq.keys())
+	if len(k) > 0:
+		best_desanonymised_id_user = k[0]
+	else:
+		return "DEL"
 	#print("")
 	#print(id_user, "=>", best_desanonymised_id_user)
 	#exit()
@@ -262,7 +267,7 @@ def main():
 
 	print("Let's hack now !!!")
 
-	nb_result = 30			#change this to have more result, default 1
+	nb_result = 75			#change this to have more result, default 1
 	result = dict()			#final main result handler
 
 	print("Found", len(list(shopping_lists.keys())), "users to desanonymize")
@@ -278,15 +283,14 @@ def main():
 		#print("rows_index_to_delete", rows_index_to_delete)
 		#print("new_Xgt_with_deleted_items", new_Xgt_with_deleted_items)
 		st = time.time()
-		best_desanonymised_id_user = hack(conf, id_user, gt, new_Xgt_with_deleted_items, items_transformed, nb_result)
+		best_desanonymised_id_user = hack(conf, id_user, gt, Xgt, items_transformed, nb_result)
 		result[id_user] = best_desanonymised_id_user
-		print("hack duration =", time.time()-st)
 
-		print("\n=>", id_user, "=>", best_desanonymised_id_user, "|", len(list(shopping_lists.keys()))-i-1, "/", len(list(shopping_lists.keys()))-1,"id_users remaining, ", new_Xgt_with_deleted_items.shape[0], "rows remaining")
+		print("\n=>", id_user, "=>", best_desanonymised_id_user, "|", len(list(shopping_lists.keys()))-i-1, "/", len(list(shopping_lists.keys()))-1,"id_users remaining, ")
+		print("hack duration =", time.time()-st, "(s) | len =>", items_transformed.shape[0])
 		#print("gtn_shopping_lists[best_desanonymised_id_user]", gtn_shopping_lists[best_desanonymised_id_user])
 		#print(gtn_shopping_lists[best_desanonymised_id_user])
-		print("len =>", len([sl[0] for sl in gtn_shopping_lists[best_desanonymised_id_user]]))
-		rows_index_to_delete = rows_index_to_delete#+[sl[0] for sl in gtn_shopping_lists[best_desanonymised_id_user]]
+		#rows_index_to_delete = rows_index_to_delete#+[sl[0] for sl in gtn_shopping_lists[best_desanonymised_id_user]]
 
 	############################################################################
 	#pretty print result
@@ -299,8 +303,8 @@ def main():
 	#export_f_file(gtn_export, sfn_export, np.asarray(list_desanonymized), out_path)
 
 	#print(result)
-	#with open('output_dump.pickle', 'wb') as config_dictionary_file:
-	#	pickle.dump({"gt":gt, "result":result, "out_path":out_path}, config_dictionary_file)
+	with open('output_dump.pickle', 'wb') as config_dictionary_file:
+		pickle.dump({"gt":gt, "dt":dt, "result":result, "out_path":out_path}, config_dictionary_file)
 	output(gt, result, out_path)
 
 	save_conf(conf, conf_file_path)
