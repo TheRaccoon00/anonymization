@@ -303,9 +303,10 @@ def main():
 	#export_f_file(gtn_export, sfn_export, np.asarray(list_desanonymized), out_path)
 
 	#print(result)
-	with open('output_dump.pickle', 'wb') as config_dictionary_file:
+	with open(os.path.splitext(out_path)[0]+'.pickle', 'wb') as config_dictionary_file:
 		pickle.dump({"gt":gt, "dt":dt, "result":result, "out_path":out_path}, config_dictionary_file)
 	output(gt, result, out_path)
+	output2(dt, result, os.path.splitext(out_path)[0]+"_v2.csv")
 
 	save_conf(conf, conf_file_path)
 	print("Result written in", out_path)
