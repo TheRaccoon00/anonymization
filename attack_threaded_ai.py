@@ -13,7 +13,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
 import tensorflow as tf
 
 import pandas as pd
-import time, random, sys, os, argparse
+import time, random, sys, os, argparse, pickle
 import numpy as np
 from sklearn.preprocessing import StandardScaler, RobustScaler, MaxAbsScaler
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
