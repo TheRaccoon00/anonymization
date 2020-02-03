@@ -459,6 +459,72 @@ def output(gt, result, out_path):
 		f_file.write(','.join(vec)+"\n")
 	f_file.close()
 
+def output2(dt, result, out_path):
+	dtn = np.asarray(dt)
+	#result = {v: k for k, v in result.items()}
+	#result : { "désanonymisé (gt)": "anonymisé (dt)"}
+	print(result)
+	print(dtn[0:3])
+
+	id_users_gt = [str(r) for r in dtn[:,0]]
+	id_users_dt = list(result.keys())
+	missing_ids = list(set(id_users_gt)-set(id_users_dt))
+	print("missing_ids", len(missing_ids))
+	out_dict = dict()
+
+	for dtn_row in dtn:
+		id_user_dt = str(dtn_row[0])
+		id_user_gt = result.get(id_user_dt, None)
+
+		date = split_date(np.asarray([dtn_row]), 1)
+		y, m, d = date[0][1], date[0][2], date[0][3]
+
+		if out_dict.get(id_user_gt, None) == None:
+			out_dict[id_user_gt] = ["DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL"]
+
+		if y == "2010":
+			out_dict[id_user_gt][0] = id_user_dt
+		elif y == "2011":
+			if m == "1":
+				out_dict[id_user_gt][1] = id_user_dt
+			if m == "2":
+				out_dict[id_user_gt][2] = id_user_dt
+			if m == "3":
+				out_dict[id_user_gt][3] = id_user_dt
+			if m == "4":
+				out_dict[id_user_gt][4] = id_user_dt
+			if m == "5":
+				out_dict[id_user_gt][5] = id_user_dt
+			if m == "6":
+				out_dict[id_user_gt][6] = id_user_dt
+			if m == "7":
+				out_dict[id_user_gt][7] = id_user_dt
+			if m == "8":
+				out_dict[id_user_gt][8] = id_user_dt
+			if m == "9":
+				out_dict[id_user_gt][9] = id_user_dt
+			if m == "10":
+				out_dict[id_user_gt][10] = id_user_dt
+			if m == "11":
+				out_dict[id_user_gt][11] = id_user_dt
+			if m == "12":
+				out_dict[id_user_gt][12] = id_user_dt
+
+	for ids in missing_ids:
+		out_dict[ids] = ["DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL"]
+
+	out_list = np.asarray([[key]+out_dict[key] for key in list(out_dict.keys())])
+	out_list_sorted = out_list[out_list[:, 0].argsort()]
+
+	if os.path.exists(out_path):
+		os.remove(out_path)
+
+	f_file = open(out_path, "a")
+	f_file.write("id_user,0,1,2,3,4,5,6,7,8,9,10,11,12\n")
+	for vec in out_list_sorted:
+		f_file.write(','.join(vec)+"\n")
+	f_file.close()
+
 if __name__ == '__main__':
 	gt = np.asarray([["AZERTY", "2010/12/01", 3, 8, 9], ["ZERTYU", "2011/01/01", 4, 9, 10], ["ERTYUI", "2011/02/01", 4, 9, 10]])
 	result = {"YTVYGJH":"AZERTY", "UJNKLZ": "ZERTYU"}
