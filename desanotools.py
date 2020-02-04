@@ -459,15 +459,16 @@ def output(gt, result, out_path):
 		f_file.write(','.join(vec)+"\n")
 	f_file.close()
 
-def output2(dt, result, out_path):
+def output2(gt, dt, result, out_path):
 	dtn = np.asarray(dt)
+	gtn = np.asarray(gt)
 	#result = {v: k for k, v in result.items()}
 	#result : { "désanonymisé (gt)": "anonymisé (dt)"}
 	print(result)
 	print(dtn[0:3])
 
-	id_users_gt = [str(r) for r in dtn[:,0]]
-	id_users_dt = list(result.keys())
+	id_users_gt = [str(r) for r in gtn[:,0]]
+	id_users_dt = list(result.values())
 	missing_ids = list(set(id_users_gt)-set(id_users_dt))
 	print("missing_ids", len(missing_ids))
 	out_dict = dict()
@@ -513,7 +514,7 @@ def output2(dt, result, out_path):
 	for ids in missing_ids:
 		out_dict[ids] = ["DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL", "DEL"]
 
-	out_list = np.asarray([[key]+out_dict[key] for key in list(out_dict.keys())])
+	out_list = np.asarray([[key]+out_dict[key] for key in list(out_dict.keys()) if key != "DEL"])
 	out_list_sorted = out_list[out_list[:, 0].argsort()]
 
 	if os.path.exists(out_path):

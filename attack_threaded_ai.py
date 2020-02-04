@@ -62,7 +62,7 @@ conf_file_path = ""
 
 encoder_model = load_autoencoder("encoder.h5")
 
-def hack(conf, id_user, gt, Xgt, dtn_transformed_part, nb_result):
+def hack(conf, id_user, gt, Xgt, dtn_transformed_part, nb_result, result):
 	#retourne l'id_user le plus probable de la liste de course dtn_transformed_part
 	#part_result = []
 	#print("dtn_transformed_part.shape[0]", dtn_transformed_part.shape[0])
@@ -93,6 +93,9 @@ def hack(conf, id_user, gt, Xgt, dtn_transformed_part, nb_result):
 			id_user_freq[str(id_user_v)] = 1
 		else:
 			id_user_freq[str(id_user_v)] += 1
+
+	for k in set(id_user_freq.keys()).intersection(set(result.keys())):
+		id_user_freq[k] -= 1
 
 	#print(id_user_freq)
 	id_user_freq = {k: v for k, v in sorted(id_user_freq.items(), key=lambda item: item[1], reverse=True)}
@@ -283,7 +286,7 @@ def main():
 		#print("rows_index_to_delete", rows_index_to_delete)
 		#print("new_Xgt_with_deleted_items", new_Xgt_with_deleted_items)
 		st = time.time()
-		best_desanonymised_id_user = hack(conf, id_user, gt, Xgt, items_transformed, nb_result)
+		best_desanonymised_id_user = hack(conf, id_user, gt, Xgt, items_transformed, nb_result, result)
 		result[id_user] = best_desanonymised_id_user
 
 		print("\n=>", id_user, "=>", best_desanonymised_id_user, "|", len(list(shopping_lists.keys()))-i-1, "/", len(list(shopping_lists.keys()))-1,"id_users remaining, ")
@@ -305,8 +308,8 @@ def main():
 	#print(result)
 	with open(os.path.splitext(out_path)[0]+'.pickle', 'wb') as config_dictionary_file:
 		pickle.dump({"gt":gt, "dt":dt, "result":result, "out_path":out_path}, config_dictionary_file)
-	output(gt, result, out_path)
-	output2(dt, result, os.path.splitext(out_path)[0]+"_v2.csv")
+	#output(gt, result, out_path)
+	output2(gt, dt, result, os.path.splitext(out_path)[0]+"_v2.csv")
 
 	save_conf(conf, conf_file_path)
 	print("Result written in", out_path)
